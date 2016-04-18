@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
     if(argc != 3)
     {
         std::cout << "Wrong parameters" << std::endl;
+        return EXIT_FAILURE;
     }
 
     int ret;
