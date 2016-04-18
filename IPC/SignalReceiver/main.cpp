@@ -12,8 +12,9 @@ int main()
 
         handler.setupSignalHandlers();
 
-        while(!handler.getGotExitSignal())
+        while(handler.getSignum() != SIGINT)
         {
+            std::cout << "Waiting for signal ..." << std::endl;
             sleep(1);
         }
 

@@ -5,6 +5,7 @@
 #ifndef SIGNALS_SIGNALHANDLER_H
 #define SIGNALS_SIGNALHANDLER_H
 
+#include <iostream>
 #include <signal.h>
 #include <errno.h>
 
@@ -14,17 +15,18 @@
 class SignalHandler
 {
 protected:
-    static bool gotExitSignal;
+    static int signum;
+    static int signals[29];
 
 public:
     SignalHandler();
     ~SignalHandler();
 
-    static bool getGotExitSignal();
-    static void setGotExitSignal(bool gotExitSignal);
+    static int getSignum();
+    static void setSignum(bool gotExitSignal);
 
     void setupSignalHandlers();
-    static void exitSignalHandler(int exit);
+    static void signalHandlers(int signum);
 };
 
 
