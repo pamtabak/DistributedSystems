@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     int ret;
 
     int signum = atoi(argv[1]);
-    pid_t pid = atoi(argv[2]);
+    pid_t pid  = atoi(argv[2]);
 
     try
     {

@@ -17,7 +17,7 @@ int main(int argc, const char* argv[])
             std::cout << "Waiting for signal ..." << std::endl;
             if(argc > 1 && strcmp(argv[1], "blocking") == 0)
             {
-                sleep(1);
+                sleep(2);
             }
         }
 

@@ -42,7 +42,7 @@ int SignalHandler::getSignum()
 /**
  * Sets the int indicating which signal the program received
  */
-void SignalHandler::setSignum(bool signum)
+void SignalHandler::setSignum(int signum)
 {
     SignalHandler::signum = signum;
 }
@@ -160,7 +160,6 @@ void SignalHandler::setupSignalHandlers()
     {
         if(signal((int) SignalHandler::signals[i], SignalHandler::signalHandlers) == SIG_ERR)
         {
-
             throw SignalException("Error setting up handlers ...");
         }
     }

@@ -23,7 +23,7 @@ public:
     ~SignalHandler();
 
     static int getSignum();
-    static void setSignum(bool gotExitSignal);
+    static void setSignum(int signum);
 
     void setupSignalHandlers();
     static void signalHandlers(int signum);
