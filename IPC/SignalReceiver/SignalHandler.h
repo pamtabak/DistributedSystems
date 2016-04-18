@@ -27,6 +27,8 @@ public:
 
     void setupSignalHandlers();
     static void signalHandlers(int signum);
+
+    bool terminate(int signum);
 };
 
 

@@ -31,8 +31,8 @@ SignalHandler::~SignalHandler()
 }
 
 /**
- * Return the bool flag indicating whether the program received an exit signal
- * @return Flag indicating shutdown of program
+ * Return the int indicating which signal the program received
+ * @return int indicating received signal
  */
 int SignalHandler::getSignum()
 {
@@ -40,7 +40,7 @@ int SignalHandler::getSignum()
 }
 
 /**
- * Sets the bool flag indicating whether the program received an exit signal
+ * Sets the int indicating which signal the program received
  */
 void SignalHandler::setSignum(bool signum)
 {
@@ -48,8 +48,8 @@ void SignalHandler::setSignum(bool signum)
 }
 
 /**
- * Sets exit signal to true
- * @param[in] exit Not used but required by function prototype to match required handler
+ * Handle each possible signal when received
+ * @param[in] signum
  */
 void SignalHandler::signalHandlers(int signum)
 {
@@ -166,3 +166,16 @@ void SignalHandler::setupSignalHandlers()
     }
 }
 
+/**
+ * Checks whether the received signal terminates de process
+ * @param[in] signum
+ * @return bool flag indicating whether the process should be terminated
+ */
+bool SignalHandler::terminate(int signum)
+{
+    if(signum == SIGHUP || signum == SIGINT || signum == SIGQUIT || signum == SIGKILL || signum == SIGTERM)
+    {
+        return true;
+    }
+    return false;
+}

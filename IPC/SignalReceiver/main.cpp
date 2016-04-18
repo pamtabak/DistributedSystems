@@ -2,7 +2,7 @@
 
 #include "SignalHandler.h"
 
-int main()
+int main(int argc, const char* argv[])
 {
     int ret;
 
@@ -12,10 +12,13 @@ int main()
 
         handler.setupSignalHandlers();
 
-        while(handler.getSignum() != SIGINT)
+        while(!handler.terminate(handler.getSignum()))
         {
             std::cout << "Waiting for signal ..." << std::endl;
-            sleep(1);
+            if(argc > 1 && strcmp(argv[1], "blocking") == 0)
+            {
+                sleep(1);
+            }
         }
 
         ret = EXIT_SUCCESS;
