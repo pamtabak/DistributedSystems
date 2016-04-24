@@ -10,21 +10,21 @@ using namespace std;
 default_random_engine generator;
 uniform_int_distribution<int> distribution(1,numeric_limits<int>::max());
 
-int getIncreasingRandomNumber(int lastRandomNumber) 
+int getIncreasingRandomNumber(int lastRandomNumber)
 {
-	int r = distribution(generator);
-	while (r <= lastRandomNumber)
-	{
-		r = distribution(generator);
-	}	
-	return r;    
+    int r = distribution(generator);
+    while (r <= lastRandomNumber)
+    {
+        r = distribution(generator);
+    }
+    return r;
 }
 
 int main(int argc, char *argv[])
 {
-	std::cout << "Hello World" << std::endl;
+    std::cout << "Hello World" << std::endl;
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	return 0;
+    return 0;
 }
