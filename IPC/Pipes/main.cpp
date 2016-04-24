@@ -16,14 +16,14 @@ int getIncreasingRandomNumber(int lastRandomNumber)
 	int r = distribution(generator);
 	while (r <= lastRandomNumber)
 	{
-		r = rand();
+		r = distribution(generator);
 	}	
 	return r;    
 }
 
 string isPrime (int number)
 {
-	for (int i = 2; i <= sqrt(number); i++)
+	for (int i = 2; i <= (sqrt(number) + 1); i++)
 	{
 		if (number % i == 0)
 		{
@@ -81,13 +81,13 @@ int main(int argc, const char* argv[])
     		lastRandomNumber = r;
     		const char * c = to_string(r).c_str();
     		string number = c;
-    		cout << "About to send number: " + number << endl;
+    		cout << "PRODUCER: About to send number: " + number << endl;
     		write(pipeFileDescriptors[1], c, number.size() + 1);
     		sleep(2);
     	}
 
     	// When it`s over, send 0
-    	cout << "It's over. Sending 0" << endl;
+    	cout << "PRODUCER: It's over. Sending 0" << endl;
     	write(pipeFileDescriptors[1], "0", 2); 
 
     	close(pipeFileDescriptors[1]);
@@ -98,21 +98,9 @@ int main(int argc, const char* argv[])
     	// Parent : receives message from child
 
     	// This is the read end
-  //   	read(pipeFileDescriptors[0], readPipe, String_Size);
-
-		// string numericString = readPipe; // readPipe is char
-		// int number = atoi(numericString.c_str());
-		// int lastNumber;
-
-		// cout << "Just received a message that says: " + numericString << endl;
-
-		// string prime = isPrime(number);
-		// cout << "Number " + numericString + " is prime: " + prime << endl;
-		// int number = 1;
-
 		while (true)
 		{
-			read(pipeFileDescriptors[0], readPipe, String_Size);
+			read(pipeFileDescriptors[0], readPipe, String_Size); // Blocking function
 
 			string numericString = readPipe; // readPipe is char
 			int number = atoi(numericString.c_str());
@@ -122,13 +110,13 @@ int main(int argc, const char* argv[])
 				break;
 			}
 
-			cout << "Just received a message that says: " + numericString << endl;
+			cout << "CONSUMER: Just received a message that says: " + numericString << endl;
 
 			string prime = isPrime(number);
-			cout << "Number " + numericString + " is prime: " + prime << endl;
+			cout << "CONSUMER: Number " + numericString + " is prime: " + prime << endl;
 		}
 
-		cout << "Consumer just received 0. Finishing process" << endl;
+		cout << "CONSUMER: Consumer just received 0. Finishing process" << endl;
 		close(pipeFileDescriptors[0]);
 		exit(0);
     }
