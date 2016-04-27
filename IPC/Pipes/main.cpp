@@ -4,21 +4,21 @@
 #include <string>
 #include <math.h>
 
+#define RAND(min, max) rand() % (max - min + 1) + min
+
 #define String_Size 100
 
 using namespace std;
 
-default_random_engine generator;
-uniform_int_distribution<int> distribution(1,numeric_limits<int>::max());
-
-int getIncreasingRandomNumber(int lastRandomNumber) 
+int getIncreasingRandomNumber(int lastRandomNumber, int min, int max)
 {
-	int r = distribution(generator);
-	while (r <= lastRandomNumber)
-	{
-		r = distribution(generator);
-	}	
-	return r;    
+    srand(time(NULL));
+    int r = RAND(min, max);
+    while(r <= lastRandomNumber)
+    {
+        r = RAND(min, max);
+    }
+    return r;
 }
 
 string isPrime (int number)
@@ -76,9 +76,15 @@ int main(int argc, const char* argv[])
     	// This is the write end
 
 		int lastRandomNumber = 0;
+		int delta, min, max, r;
+		delta = std::numeric_limits<int>::max() / indexOfZero;
+		min = 0;
+    	max = delta;
     	for (int i = 0; i < indexOfZero; i++) {
-    		int r =  getIncreasingRandomNumber(lastRandomNumber);
+    		r =  getIncreasingRandomNumber(lastRandomNumber, min, max);
     		lastRandomNumber = r;
+    		min += delta;
+    		max += delta;
     		const char * c = to_string(r).c_str();
     		string number = c;
     		cout << "PRODUCER: About to send number: " + number << endl;

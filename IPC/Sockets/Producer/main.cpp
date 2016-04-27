@@ -2,20 +2,24 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define RAND() rand() % std::numeric_limits<int>::max() + 1
+#define RAND(min, max) rand() % (max - min + 1) + min
 
 #define BUFFER_SIZE 256
 #define PORT_NO 666
 #define MAX_CONNECTIONS 5
 
-
-int getIncreasingRandomNumber(int lastRandomNumber)
+/**
+ * Returns a random number larger than the last ont generated and between the min/max value
+ * @param[in] lastRandomNumber, min, max
+ * @return int random number
+ */
+int getIncreasingRandomNumber(int lastRandomNumber, int min, int max)
 {
     srand(time(NULL));
-    int r = RAND();
+    int r = RAND(min, max);
     while(r <= lastRandomNumber)
     {
-        r = RAND();
+        r = RAND(min, max);
     }
     return r;
 }
@@ -73,11 +77,16 @@ int main(int argc, char *argv[])
 
     indexOfZero = atoi(argv[1]);
     int lastRandomNumber = 0;
-    int randomNumber;
+    int delta, min, max, randomNumber;
+    delta = std::numeric_limits<int>::max() / indexOfZero;
+    min = 0;
+    max = delta;
     for(int i = 0; i < indexOfZero; i++)
     {
-        randomNumber = getIncreasingRandomNumber(lastRandomNumber);
+        randomNumber = getIncreasingRandomNumber(lastRandomNumber, min, max);
         lastRandomNumber = randomNumber;
+        min += delta;
+        max += delta;
         std::string s = std::to_string(randomNumber);
         const char * c = s.c_str();
         response = write(newSockFileDesc, c, s.size());
