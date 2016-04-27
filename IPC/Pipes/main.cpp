@@ -1,5 +1,4 @@
 #include <iostream>
-#include <random>
 #include <limits>
 #include <string>
 #include <math.h>
@@ -10,15 +9,10 @@
 
 using namespace std;
 
-int getIncreasingRandomNumber(int lastRandomNumber, int min, int max)
+int getIncreasingRandomNumber(int min, int max)
 {
     srand(time(NULL));
-    int r = RAND(min, max);
-    while(r <= lastRandomNumber)
-    {
-        r = RAND(min, max);
-    }
-    return r;
+    return RAND(min, max);;
 }
 
 string isPrime (int number)
@@ -75,14 +69,12 @@ int main(int argc, const char* argv[])
     	// Child : sends message to parent
     	// This is the write end
 
-		int lastRandomNumber = 0;
 		int delta, min, max, r;
 		delta = std::numeric_limits<int>::max() / indexOfZero;
 		min = 0;
     	max = delta;
     	for (int i = 0; i < indexOfZero; i++) {
-    		r =  getIncreasingRandomNumber(lastRandomNumber, min, max);
-    		lastRandomNumber = r;
+    		r =  getIncreasingRandomNumber(min, max);
     		min += delta;
     		max += delta;
     		const char * c = to_string(r).c_str();

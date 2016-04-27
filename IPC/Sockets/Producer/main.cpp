@@ -13,15 +13,10 @@
  * @param[in] lastRandomNumber, min, max
  * @return int random number
  */
-int getIncreasingRandomNumber(int lastRandomNumber, int min, int max)
+int getIncreasingRandomNumber(int min, int max)
 {
     srand(time(NULL));
-    int r = RAND(min, max);
-    while(r <= lastRandomNumber)
-    {
-        r = RAND(min, max);
-    }
-    return r;
+    return RAND(min, max);;
 }
 
 void error(char *msg)
@@ -76,15 +71,13 @@ int main(int argc, char *argv[])
     }
 
     indexOfZero = atoi(argv[1]);
-    int lastRandomNumber = 0;
     int delta, min, max, randomNumber;
     delta = std::numeric_limits<int>::max() / indexOfZero;
     min = 0;
     max = delta;
     for(int i = 0; i < indexOfZero; i++)
     {
-        randomNumber = getIncreasingRandomNumber(lastRandomNumber, min, max);
-        lastRandomNumber = randomNumber;
+        randomNumber = getIncreasingRandomNumber(min, max);
         min += delta;
         max += delta;
         std::string s = std::to_string(randomNumber);
