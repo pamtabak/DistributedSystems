@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <signal.h>
-#include <errno.h>
 
 #include "SignalException.h"
 

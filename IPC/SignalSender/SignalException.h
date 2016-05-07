@@ -6,7 +6,6 @@
 #define SIGNALSENDER_SIGNALEXCEPTION_H
 
 #include <stdexcept>
-#include <string>
 
 
 class SignalException : public std::runtime_error

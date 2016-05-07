@@ -1,6 +1,4 @@
 #include <iostream>
-#include <limits>
-#include <string>
 #include <math.h>
 
 #define RAND(min, max) rand() % (max - min + 1) + min

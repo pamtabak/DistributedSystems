@@ -1,0 +1,41 @@
+#include <iostream>
+#include <cstdlib>
+#include <cstdint>
+
+int8_t random(int seed, int8_t min, int8_t max)
+{
+	srand(seed);
+	return rand() % (max - min + 1) + min;
+}
+
+void fill(int8_t *v, long n, int seed)
+{
+	for(long i = 0; i < n; ++i)
+	{
+		v[i] = random(seed, -100, 100);
+	}
+}
+
+int main(int argc, char const *argv[])
+{
+	if(argc != 3)
+	{
+		std::cout << "Wrong parameters" << std::endl;
+		exit(-1);
+	}
+
+	long n = atol(argv[1]);
+	int k = atoi(argv[2]);
+
+	int seed = time(NULL);
+
+	int8_t *v = (int8_t *) malloc(n * sizeof(int8_t));
+	fill(v, n, seed);
+
+	std::cout << "wainting ..." << std::endl;
+	getchar();
+
+	delete [] v;
+
+	return 0;
+}
