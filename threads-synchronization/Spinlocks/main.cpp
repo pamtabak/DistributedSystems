@@ -61,10 +61,9 @@ int main(int argc, char const *argv[])
 	long tSum = 0;
 	for (long i = 0; i < n; ++i)
 	{
-
 		tSum += (int) v[i];
 	}
-	printf("total sum: %d\n", tSum);
+	printf("real total sum: %d\n", tSum);
 
 	long testSum = 0;
 
@@ -92,7 +91,7 @@ int main(int argc, char const *argv[])
 
 	delete [] v, threads, args;
 
-	printf("Test sum: %d\n", testSum);
+	printf("test total sum: %d\n", testSum);
 
 	return 0;
 }
