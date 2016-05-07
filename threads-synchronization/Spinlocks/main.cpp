@@ -12,16 +12,16 @@ struct arg_struct
 	long *tSum;
 };
 
-int8_t random(int seed, int8_t min, int8_t max)
+int8_t random(int8_t min, int8_t max)
 {
 	return rand() % (max - min + 1) + min;
 }
 
-void fill(int8_t *v, long n, int seed)
+void fill(int8_t *v, long n)
 {
 	for(long i = 0; i < n; ++i)
 	{
-		v[i] = random(seed, -100, 100);
+		v[i] = random(-100, 100);
 	}
 }
 
@@ -48,13 +48,13 @@ int main(int argc, char const *argv[])
 	}
 
 	long n = atol(argv[1]);
-	int k = atoi(argv[2]) < n ? atoi(argv[2]) : (int) n;
+	int k  = atoi(argv[2]) < n ? atoi(argv[2]) : (int) n;
 
 	int seed = time(NULL);
 	srand(seed);
 
 	int8_t *v = (int8_t *) malloc(n * sizeof(int8_t));
-	fill(v, n, seed);
+	fill(v, n);
 
 	printf("finished filling vector\n");
 
