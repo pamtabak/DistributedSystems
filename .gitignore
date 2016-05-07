@@ -65,3 +65,7 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# VSCode #
+##########
+.vscode
