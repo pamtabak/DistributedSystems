@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <atomic>
 
 struct arg_struct
 {
@@ -10,7 +11,23 @@ struct arg_struct
 	long min;
 	long max;
 	long *tSum;
+	struct lock *spinlock;
 };
+
+struct lock
+{
+	bool held = 0;
+};
+
+void acquire(struct lock *spinlock)
+{
+	while(__sync_lock_test_and_set(&spinlock->held, 1));
+}
+
+void release (struct lock *spinlock)
+{
+	spinlock->held = 0;
+}
 
 int8_t random(int8_t min, int8_t max)
 {
@@ -25,7 +42,7 @@ void fill(int8_t *v, long n)
 	}
 }
 
-void *test(void *arguments)
+void *sum(void *arguments)
 {
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	long pSum = 0;
@@ -33,10 +50,9 @@ void *test(void *arguments)
 	{
 		pSum += (int) args->v[i];
 	}
-	// begin critical_section
+	acquire(args->spinlock);
 	*args->tSum += pSum;
-	// end critical_section
-
+	release(args->spinlock);
 }
 
 int main(int argc, char const *argv[])
@@ -58,12 +74,14 @@ int main(int argc, char const *argv[])
 
 	printf("finished filling vector\n");
 
+	struct lock spinlock;
+
 	long tSum = 0;
 	for (long i = 0; i < n; ++i)
 	{
 		tSum += (int) v[i];
 	}
-	printf("real total sum: %d\n", tSum);
+	printf("real total sum: %ld\n", tSum);
 
 	long testSum = 0;
 
@@ -80,9 +98,11 @@ int main(int argc, char const *argv[])
 		args[i]->min = min;
 		args[i]->max = max;
 		args[i]->tSum = &testSum;
-		pthread_create(&threads[i], NULL, test, (void *) args[i]);
+		args[i]->spinlock = &spinlock;
+		pthread_create(&threads[i], NULL, sum, (void *) args[i]);
 		min = max;
 		max = min + delta;
+		if (i == k - 2) { max = n; }	// in case n % k != 0
 	}
 	for(int i = 0; i < k; ++i)
 	{
@@ -91,7 +111,7 @@ int main(int argc, char const *argv[])
 
 	delete [] v, threads, args;
 
-	printf("test total sum: %d\n", testSum);
+	printf("test total sum: %ld\n", testSum);
 
 	return 0;
 }
