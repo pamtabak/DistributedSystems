@@ -50,4 +50,6 @@ int main(int argc, char const *argv[])
 	initializeVector(v,N);
 
 	printf("finished initializing vector with 0\n");
+
+	return 0;
 }
