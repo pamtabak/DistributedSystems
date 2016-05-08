@@ -1,5 +1,11 @@
 #include <iostream>
 #include <pthread.h>
+#include <math.h>
+
+struct arg_struct
+{
+	int *v;
+};
 
 bool isPrime (int number)
 {
@@ -28,6 +34,16 @@ void initializeVector(int *v, int n)
 	}
 }
 
+void *consume (void *arguments)
+{
+
+}
+
+void *produce (void *arguments)
+{
+
+}
+
 int main(int argc, char const *argv[])
 {
 	if(argc != 4)
@@ -50,6 +66,34 @@ int main(int argc, char const *argv[])
 	initializeVector(v,N);
 
 	printf("finished initializing vector with 0\n");
+
+
+	pthread_t *producerThreads = (pthread_t *) malloc(Np * sizeof(pthread_t));
+	pthread_t *consumerThreads = (pthread_t *) malloc(Nc * sizeof(pthread_t));
+	struct arg_struct **pArgs  = (struct arg_struct **) malloc(Np * sizeof(struct arg_struct *));
+	struct arg_struct **cArgs  = (struct arg_struct **) malloc(Nc * sizeof(struct arg_struct *));
+
+	// Create threads
+	for(int i = 0; i < Np; ++i)
+	{
+		pthread_create(&producerThreads[i], NULL, consume, (void *) pArgs[i]);
+	}
+	for (int i = 0; i < Nc; ++i)
+	{
+		pthread_create(&consumerThreads[i], NULL, produce, (void *) cArgs[i]);
+	}
+
+	// Thread Join
+	for(int i = 0; i < Np; ++i)
+	{
+		pthread_join(producerThreads[i], NULL);
+	}
+	for (int i = 0; i < Nc; ++i)
+	{
+		pthread_join(consumerThreads[i], NULL);	
+	}
+
+	delete [] v, producerThreads, consumerThreads;
 
 	return 0;
 }
