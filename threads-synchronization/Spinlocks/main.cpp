@@ -63,9 +63,11 @@ int main(int argc, char const *argv[])
 		exit(-1);
 	}
 
+	// Extracting info regarding number of threads, passed as parameters to this program
 	long n = atol(argv[1]);
 	int k  = atoi(argv[2]) < n ? atoi(argv[2]) : (int) n;
 
+	// Initializing seed
 	int seed = time(NULL);
 	srand(seed);
 
