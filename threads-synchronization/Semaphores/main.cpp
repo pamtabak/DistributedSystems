@@ -1,6 +1,7 @@
 #include <iostream>
 #include <pthread.h>
 #include <math.h>
+#include <semaphore.h>
 
 struct arg_struct
 {
@@ -26,22 +27,33 @@ int random(int min, int max)
 	return rand() % (max - min + 1) + min;
 }
 
-void initializeVector(int *v, int n)
-{
-	for(int i = 0; i < n; ++i)
-	{
-		v[i] = 0;
-	}
-}
-
 void *consume (void *arguments)
 {
-
+	while (true)
+	{
+		wait(full); // Wait for a full buffer
+		wait(mutex);
+		// Remove resource from a full buffer
+		// Copy value from buffer, and set it to 0
+		// Verify if this number is prime
+		// printf(...)
+		signal(mutex);
+		signal(full);
+		// Consume resource
+	}
 }
 
 void *produce (void *arguments)
 {
-
+	while (true)
+	{
+		// Produce new number
+		wait(empty); // Verify if array is full
+		wait(mutex); // Write on shared vector
+		// Add resource to an empty buffer
+		signal(mutex);
+		signal(empty);
+	}
 }
 
 int main(int argc, char const *argv[])
@@ -62,11 +74,9 @@ int main(int argc, char const *argv[])
 	srand(seed);
 
 	// Initializing vector, with 0 values
-	int *v = (int *) malloc(N * sizeof(int));
-	initializeVector(v,N);
+	int *v = (int *) calloc(0,N * sizeof(int));
 
 	printf("finished initializing vector with 0\n");
-
 
 	pthread_t *producerThreads = (pthread_t *) malloc(Np * sizeof(pthread_t));
 	pthread_t *consumerThreads = (pthread_t *) malloc(Nc * sizeof(pthread_t));
