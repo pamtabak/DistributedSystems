@@ -1,11 +1,29 @@
 #include <iostream>
 #include <pthread.h>
 #include <math.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 #include <semaphore.h>
+// #include <semaphore.h>
+// #include <mutex>
+// #include <condition_variable>
+
+
+/* Missing:
+	- check empty
+	- check full
+	- consume
+	- stop program
+*/
 
 struct arg_struct
 {
 	int *v;
+	long numbersConsumed;
+	sem_t *empty;
+	pthread_mutex_t *arrayMutex;
+	pthread_mutex_t *variableMutex;
+	sem_t *full;
 };
 
 bool isPrime (int number)
@@ -29,36 +47,51 @@ int random(int min, int max)
 
 void *consume (void *arguments)
 {
+	struct arg_struct *args = (struct arg_struct *) arguments;
 	while (true)
 	{
-		wait(full); // Wait for a full buffer
-		wait(mutex);
-		// Remove resource from a full buffer
-		// Copy value from buffer, and set it to 0
-		// Verify if this number is prime
-		// printf(...)
-		signal(mutex);
-		signal(full);
+		// In this procedure, we need to update the amount of numbers already consumed
+		if (args->numbersConsumed == 0)
+		{
+			break; // STOP PROGRAM!!!!!!
+		}
+
+		sem_wait(args->full); // Wait for a full buffer
+		pthread_mutex_lock(args->arrayMutex);
+		pthread_mutex_lock(args->variableMutex);
+		args->numbersConsumed--;
+		// // Remove resource from a full buffer
+		// // Copy value from buffer, and set it to 0
+		// // Verify if this number is prime
+		// // printf(...)
+		pthread_mutex_unlock(args->variableMutex);
+		pthread_mutex_unlock(args->arrayMutex);
+		sem_post(args->empty);
 		// Consume resource
 	}
 }
 
 void *produce (void *arguments)
 {
+	struct arg_struct *args = (struct arg_struct *) arguments;
 	while (true)
 	{
 		// Produce new number
-		wait(empty); // Verify if array is full
-		wait(mutex); // Write on shared vector
+		int randomNumber = random(1,1000000);
+
+		sem_wait(args->empty); // Verify if array is full
+		pthread_mutex_lock(args->arrayMutex); // Write on shared vector
+		
 		// Add resource to an empty buffer
-		signal(mutex);
-		signal(empty);
+		
+		pthread_mutex_unlock(args->arrayMutex);
+		sem_post(args->full);
 	}
 }
 
 int main(int argc, char const *argv[])
 {
-	if(argc != 4)
+	if(argc != 5)
 	{
 		std::cout << "Wrong parameters" << std::endl;
 		exit(-1);
@@ -68,6 +101,28 @@ int main(int argc, char const *argv[])
 	int Np = atoi(argv[1]);
 	int Nc = atoi(argv[2]);
 	int N  = atoi(argv[3]);
+	long C = atol(argv[4]); // number of times Consumer will have to consume some number	
+
+	// Initializing mutex
+	pthread_mutex_t arrayMutex    = PTHREAD_MUTEX_INITIALIZER; // control access to array
+	pthread_mutex_t variableMutex = PTHREAD_MUTEX_INITIALIZER; // control access to variable that checks the number of numbers consumed
+	
+	// Initializing semaphores
+	
+	sem_t empty;
+	sem_t full;
+	
+	sem_init(&empty, 0, N);
+	sem_init(&full, 0, 0);
+
+	// pthread_mutex_t numbersConsumed = PTHREAD_MUTEX_INITIALIZER;
+	// pthread_mutex_t empty           = PTHREAD_MUTEX_INITIALIZER;
+	// pthread_mutex_t full            = PTHREAD_MUTEX_INITIALIZER;
+
+	// pthread_mutex_init(&numbersConsumed, NULL);
+	// pthread_mutex_init(&empty, NULL);
+	// pthread_mutex_init(&mutex, NULL);
+	// pthread_mutex_init(&full, NULL);
 
 	// Initializing seed
 	int seed = time(NULL);
@@ -86,11 +141,24 @@ int main(int argc, char const *argv[])
 	// Create threads
 	for(int i = 0; i < Np; ++i)
 	{
-		pthread_create(&producerThreads[i], NULL, consume, (void *) pArgs[i]);
+		pArgs[i]                  = (arg_struct *) malloc(sizeof(arg_struct));
+		pArgs[i]->v               = v;
+		pArgs[i]->numbersConsumed = C;
+		pArgs[i]->empty           = &empty;
+		pArgs[i]->arrayMutex      = &arrayMutex;
+		pArgs[i]->variableMutex   = &variableMutex;
+		pArgs[i]->full            = &full;
+		pthread_create(&producerThreads[i], NULL, produce, (void *) pArgs[i]);
 	}
 	for (int i = 0; i < Nc; ++i)
 	{
-		pthread_create(&consumerThreads[i], NULL, produce, (void *) cArgs[i]);
+		cArgs[i]                  = (arg_struct *) malloc(sizeof(arg_struct));
+		cArgs[i]->v               = v;
+		cArgs[i]->numbersConsumed = C;
+		cArgs[i]->arrayMutex      = &arrayMutex;
+		cArgs[i]->variableMutex   = &variableMutex;
+		cArgs[i]->full            = &full;
+		pthread_create(&consumerThreads[i], NULL, consume, (void *) cArgs[i]);
 	}
 
 	// Thread Join
