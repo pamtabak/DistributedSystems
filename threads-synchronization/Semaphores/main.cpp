@@ -19,7 +19,8 @@
 struct arg_struct
 {
 	int *v;
-	long numbersConsumed;
+	int *vSize;
+	long *numbersConsumed;
 	sem_t *empty;
 	pthread_mutex_t *arrayMutex;
 	pthread_mutex_t *variableMutex;
@@ -51,23 +52,31 @@ void *consume (void *arguments)
 	while (true)
 	{
 		// In this procedure, we need to update the amount of numbers already consumed
-		if (args->numbersConsumed == 0)
+		if (*args->numbersConsumed == 0)
 		{
-			break; // STOP PROGRAM!!!!!!
+			exit(0); // STOP PROGRAM
 		}
 
 		sem_wait(args->full); // Wait for a full buffer
 		pthread_mutex_lock(args->arrayMutex);
 		pthread_mutex_lock(args->variableMutex);
-		args->numbersConsumed--;
-		// // Remove resource from a full buffer
-		// // Copy value from buffer, and set it to 0
-		// // Verify if this number is prime
-		// // printf(...)
+		(*args->numbersConsumed)--;
+		int toBeConsumed;
+		for(int i = 0; i < *args->vSize; i++)
+		{
+			if(args->v[i] != 0)
+			{
+				// Remove resource from a full buffer
+				toBeConsumed = args->v[i];
+				args->v[i] = 0;
+				break;
+			}
+		}
+		// Consume resource
+		printf("The number %d is %s prime.\n", toBeConsumed, isPrime(toBeConsumed) ? "" : "not");
 		pthread_mutex_unlock(args->variableMutex);
 		pthread_mutex_unlock(args->arrayMutex);
 		sem_post(args->empty);
-		// Consume resource
 	}
 }
 
@@ -81,9 +90,15 @@ void *produce (void *arguments)
 
 		sem_wait(args->empty); // Verify if array is full
 		pthread_mutex_lock(args->arrayMutex); // Write on shared vector
-		
+
 		// Add resource to an empty buffer
-		
+		for(int i = 0; i < *args->vSize; i++)
+		{
+			if(args->v[i] == 0)
+			{
+				args->v[i] = randomNumber;
+			}
+		}
 		pthread_mutex_unlock(args->arrayMutex);
 		sem_post(args->full);
 	}
@@ -143,7 +158,8 @@ int main(int argc, char const *argv[])
 	{
 		pArgs[i]                  = (arg_struct *) malloc(sizeof(arg_struct));
 		pArgs[i]->v               = v;
-		pArgs[i]->numbersConsumed = C;
+		pArgs[i]->vSize			  = &N;
+		pArgs[i]->numbersConsumed = &C;
 		pArgs[i]->empty           = &empty;
 		pArgs[i]->arrayMutex      = &arrayMutex;
 		pArgs[i]->variableMutex   = &variableMutex;
@@ -154,7 +170,8 @@ int main(int argc, char const *argv[])
 	{
 		cArgs[i]                  = (arg_struct *) malloc(sizeof(arg_struct));
 		cArgs[i]->v               = v;
-		cArgs[i]->numbersConsumed = C;
+		cArgs[i]->vSize			  = &N;
+		cArgs[i]->numbersConsumed = &C;
 		cArgs[i]->arrayMutex      = &arrayMutex;
 		cArgs[i]->variableMutex   = &variableMutex;
 		cArgs[i]->full            = &full;
