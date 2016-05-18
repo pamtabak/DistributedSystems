@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <atomic>
 
 struct arg_struct
 {
 	int8_t *v;
-	long min;
-	long max;
+	long n;
+	int k;
+	long c;
 	long *tSum;
 	struct lock *spinlock;
 };
@@ -46,7 +46,7 @@ void *sum(void *arguments)
 {
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	long pSum = 0;
-	for(long i = args->min; i < args->max; ++i)
+	for(long i = args->c; i < args->n; i += args->k)
 	{
 		pSum += (int) args->v[i];
 	}
@@ -57,6 +57,8 @@ void *sum(void *arguments)
 
 int main(int argc, char const *argv[])
 {
+	clock_t startTime = clock();
+
 	if(argc != 3)
 	{
 		std::cout << "Wrong parameters" << std::endl;
@@ -74,37 +76,25 @@ int main(int argc, char const *argv[])
 	int8_t *v = (int8_t *) malloc(n * sizeof(int8_t));
 	fill(v, n);
 
-	printf("finished filling vector\n");
+	clock_t fillTime = clock();
+ 	std::cout << "fill: " << double(fillTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	struct lock spinlock;
-
 	long tSum = 0;
-	for (long i = 0; i < n; ++i)
-	{
-		tSum += (int) v[i];
-	}
-	printf("real total sum: %ld\n", tSum);
-
-	long testSum = 0;
-
 	pthread_t *threads = (pthread_t *) malloc(k * sizeof(pthread_t));
 	struct arg_struct **args = (struct arg_struct **) malloc(k * sizeof(struct arg_struct *));
-	long min, max, delta;
-	delta = n / k;
-	min = 0;
-	max = delta;
+	long c = 0;
 	for(int i = 0; i < k; ++i)
 	{
 		args[i] = (arg_struct *) malloc(sizeof(arg_struct));
 		args[i]->v = v;
-		args[i]->min = min;
-		args[i]->max = max;
-		args[i]->tSum = &testSum;
+		args[i]->n = n;
+		args[i]->k = k;
+		args[i]->c = c;
+		args[i]->tSum = &tSum;
 		args[i]->spinlock = &spinlock;
 		pthread_create(&threads[i], NULL, sum, (void *) args[i]);
-		min = max;
-		max = min + delta;
-		if (i == k - 2) { max = n; }	// in case n % k != 0
+		c++;
 	}
 	for(int i = 0; i < k; ++i)
 	{
@@ -113,7 +103,8 @@ int main(int argc, char const *argv[])
 
 	delete [] v, threads, args;
 
-	printf("test total sum: %ld\n", testSum);
+	clock_t endTime = clock();
+    std::cout << "end: " << double(endTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	return 0;
 }

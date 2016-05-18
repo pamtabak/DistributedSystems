@@ -4,17 +4,9 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <semaphore.h>
-// #include <semaphore.h>
-// #include <mutex>
-// #include <condition_variable>
+#include <signal.h>
 
-
-/* Missing:
-	- check empty
-	- check full
-	- consume
-	- stop program
-*/
+clock_t startTime;
 
 struct arg_struct
 {
@@ -51,15 +43,18 @@ void *consume (void *arguments)
 	struct arg_struct *args = (struct arg_struct *) arguments;
 	while (true)
 	{
-		// In this procedure, we need to update the amount of numbers already consumed
-		if (*args->numbersConsumed == 0)
-		{
-			exit(0); // STOP PROGRAM
-		}
-
 		sem_wait(args->full); // Wait for a full buffer
 		pthread_mutex_lock(args->arrayMutex);
 		pthread_mutex_lock(args->variableMutex);
+
+		// In this procedure, we need to update the amount of numbers already consumed
+		if (*args->numbersConsumed == 0)
+		{
+			clock_t endTime = clock();
+			printf("end :%lf secs\n", double(endTime - startTime) / (double)CLOCKS_PER_SEC);
+			exit(0); // STOP PROGRAM
+		}
+
 		(*args->numbersConsumed)--;
 		int toBeConsumed;
 		for(int i = 0; i < *args->vSize; i++)
@@ -106,6 +101,8 @@ void *produce (void *arguments)
 
 int main(int argc, char const *argv[])
 {
+	startTime = clock();
+
 	if(argc != 5)
 	{
 		std::cout << "Wrong parameters" << std::endl;
@@ -146,7 +143,8 @@ int main(int argc, char const *argv[])
 	// Initializing vector, with 0 values
 	int *v = (int *) calloc(0,N * sizeof(int));
 
-	printf("finished initializing vector with 0\n");
+	clock_t fillTime = clock();
+    std::cout << "fill: " << double(fillTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	pthread_t *producerThreads = (pthread_t *) malloc(Np * sizeof(pthread_t));
 	pthread_t *consumerThreads = (pthread_t *) malloc(Nc * sizeof(pthread_t));
@@ -189,6 +187,9 @@ int main(int argc, char const *argv[])
 	}
 
 	delete [] v, producerThreads, consumerThreads;
+
+	clock_t endTime = clock();
+    std::cout << "end: " << double(endTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	return 0;
 }
