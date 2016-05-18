@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <pthread.h>
 
+#include <chrono>
+
 struct arg_struct
 {
 	int8_t *v;
@@ -57,7 +59,8 @@ void *sum(void *arguments)
 
 int main(int argc, char const *argv[])
 {
-	clock_t startTime = clock();
+	std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
+	// clock_t startTime = clock();
 
 	if(argc != 3)
 	{
@@ -76,8 +79,11 @@ int main(int argc, char const *argv[])
 	int8_t *v = (int8_t *) malloc(n * sizeof(int8_t));
 	fill(v, n);
 
-	clock_t fillTime = clock();
- 	std::cout << "fill: " << double(fillTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
+	std::chrono::high_resolution_clock::time_point fillTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> fillTimeSpan = std::chrono::duration_cast< std::chrono::duration<double> >(fillTime - startTime);
+	std::cout << "fill: " << fillTimeSpan.count() << " secs" << std::endl;
+	// clock_t fillTime = clock();
+ 	// std::cout << "fill: " << double(fillTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	struct lock spinlock;
 	long tSum = 0;
@@ -103,8 +109,11 @@ int main(int argc, char const *argv[])
 
 	delete [] v, threads, args;
 
-	clock_t endTime = clock();
-    std::cout << "end: " << double(endTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
+	std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> endTimeSpan = std::chrono::duration_cast< std::chrono::duration<double> >(endTime - startTime);
+	std::cout << "end: " << endTimeSpan.count() << " secs" << std::endl;
+	// clock_t endTime = clock();
+    // std::cout << "end: " << double(endTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	return 0;
 }

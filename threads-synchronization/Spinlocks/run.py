@@ -12,7 +12,7 @@ for vectorSize in xrange(len(n)):
 			cmd = ["./main.out", n[vectorSize], k[threads]]
 
 			# Open/Create the output file
-			outFile = open('output.txt', 'a+')
+			outFile = open('output-test.txt', 'a+')
 
 			result = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 			out = result.stdout.read()
