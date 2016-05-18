@@ -6,7 +6,9 @@
 #include <semaphore.h>
 #include <signal.h>
 
-clock_t startTime;
+#include <chrono>
+
+std::chrono::high_resolution_clock::time_point startTime;
 
 struct arg_struct
 {
@@ -50,8 +52,11 @@ void *consume (void *arguments)
 		// In this procedure, we need to update the amount of numbers already consumed
 		if (*args->numbersConsumed == 0)
 		{
-			clock_t endTime = clock();
-			printf("end :%lf secs\n", double(endTime - startTime) / (double)CLOCKS_PER_SEC);
+			std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<double> endTimeSpan = std::chrono::duration_cast< std::chrono::duration<double> >(endTime - startTime);
+			printf("end: %lf secs\n", endTimeSpan.count());
+			// clock_t endTime = clock();
+			// printf("end :%lf secs\n", double(endTime - startTime) / (double)CLOCKS_PER_SEC);
 			exit(0); // STOP PROGRAM
 		}
 
@@ -101,7 +106,8 @@ void *produce (void *arguments)
 
 int main(int argc, char const *argv[])
 {
-	startTime = clock();
+	startTime = std::chrono::high_resolution_clock::now();
+	// startTime = clock();
 
 	if(argc != 5)
 	{
@@ -143,8 +149,9 @@ int main(int argc, char const *argv[])
 	// Initializing vector, with 0 values
 	int *v = (int *) calloc(0,N * sizeof(int));
 
-	clock_t fillTime = clock();
-    std::cout << "fill: " << double(fillTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
+	std::chrono::high_resolution_clock::time_point fillTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> fillTimeSpan = std::chrono::duration_cast< std::chrono::duration<double> >(fillTime - startTime);
+	std::cout << "fill: " << fillTimeSpan.count() << " secs" << std::endl;
 
 	pthread_t *producerThreads = (pthread_t *) malloc(Np * sizeof(pthread_t));
 	pthread_t *consumerThreads = (pthread_t *) malloc(Nc * sizeof(pthread_t));
@@ -187,9 +194,6 @@ int main(int argc, char const *argv[])
 	}
 
 	delete [] v, producerThreads, consumerThreads;
-
-	clock_t endTime = clock();
-    std::cout << "end: " << double(endTime - startTime) / (double)CLOCKS_PER_SEC << " secs" << std::endl;
 
 	return 0;
 }
