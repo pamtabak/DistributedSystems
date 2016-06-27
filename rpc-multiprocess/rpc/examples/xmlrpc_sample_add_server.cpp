@@ -61,7 +61,7 @@ main(int           const,
 
       xmlrpc_c::methodPtr const sampleAddMethodP(new sampleAddMethod);
 
-      myRegistry.addMethod("sample.add", sampleAddMethodP);
+      myRegistry.addMethod("add.method", sampleAddMethodP);
         
       xmlrpc_c::serverAbyss myAbyssServer(
           xmlrpc_c::serverAbyss::constrOpt()

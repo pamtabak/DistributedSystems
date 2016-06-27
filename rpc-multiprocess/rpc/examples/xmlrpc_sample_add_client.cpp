@@ -18,7 +18,7 @@ main(int argc, char **) {
 
     try {
         string const serverUrl("http://localhost:8080/RPC2");
-        string const methodName("sample.add");
+        string const methodName("add.method");
 
         xmlrpc_c::clientSimple myClient;
         xmlrpc_c::value result;
