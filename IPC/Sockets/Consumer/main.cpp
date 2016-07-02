@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <strings.h>
 
 #define BUFFER_SIZE 256
 
