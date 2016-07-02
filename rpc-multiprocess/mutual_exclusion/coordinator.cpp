@@ -13,9 +13,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <unistd.h>
 
 #define BUFFER_SIZE 256
-#define PORT_NO 666
+#define PORT_NO 12345
 #define MAX_CONNECTIONS 5
 
 // using namespace std;
@@ -51,60 +52,68 @@ int main(int argc, const char* argv[])
 
 
   	// Creating server
-  	int response;
+    int sockFileDesc, newSockFileDesc, response, indexOfZero;
+    socklen_t clientLen;
     char buffer[BUFFER_SIZE];
-    struct sockaddr_in serverAddr;
-    struct hostent *server;
+    struct sockaddr_in serverAddr, clientAddr;
 
-    int sockFileDesc = socket(AF_INET, SOCK_STREAM, 0);
+    sockFileDesc = socket(AF_INET, SOCK_STREAM, 0);
+
     if(sockFileDesc < 0)
     {
         error((char *) "ERROR opening socket");
     }
 
-    server = gethostbyname("localhost");
-    if(server == NULL)
-    {
-        error((char *) "ERROR no host found");
-    }
-
-
+    // bzero() sets all values in a buffer to zero
     bzero((char *) &serverAddr, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    bcopy((char *) server->h_addr, (char *) &serverAddr.sin_addr.s_addr, server->h_length);
-    serverAddr.sin_port = htons(PORT_NO);
 
-    if(connect(sockFileDesc, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0)
+    serverAddr.sin_family      = AF_INET;
+    serverAddr.sin_port        = htons(PORT_NO);
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+    // bind() binds a socket to an address
+    if(bind(sockFileDesc, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0)
     {
-        error((char *) "ERROR connectiong to server");
+        error((char *) "ERROR binding socket");
     }
 
-    while(true)
+    listen(sockFileDesc, MAX_CONNECTIONS);
+
+    while (true)
     {
+        clientLen = sizeof(clientAddr);
+        newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
+        if(newSockFileDesc < 0)
+        {
+            error((char *) "ERROR accepting client connection");
+        }
+
         bzero(buffer, BUFFER_SIZE);
-        response = read(sockFileDesc, buffer, BUFFER_SIZE - 1); // request from client 
+        // read() blocks until there is something for it to read in the socket
+        response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
         if(response < 0)
         {
             error((char *) "ERROR reading from socket");
         }
-
-        int n = atoi(buffer);
-        if(n == 0)
+        else if (response == 0)
         {
-            break;
+            // client has closed its connection
+            continue;
         }
 
-        std::string s = accessType[0];
-        const char *c = s.c_str();
-        response = write(sockFileDesc, c, s.size()); // answering client with one of the options
+        std::cout << response << std::endl;
+
+        // verifica se ja tem algum processo escrevendo no arquivo e responde o cliente
+        response = write(newSockFileDesc, "OK", 2);
         if(response < 0)
         {
             error((char *) "ERROR writing to socket");
         }
     }
+
+    close(newSockFileDesc);
     close(sockFileDesc);
 	
-
 	// Writing to a file
 	// ofstream myfile;
 	// writeToFile(myfile, "oie", "log.txt");
