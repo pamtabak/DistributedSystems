@@ -9,8 +9,6 @@
 #include <ctime>
 #include <ratio>
 
-#include <pthread.h>
-
 using namespace std;
 
 // g++ main.cpp -o main.out -std=c++11
@@ -32,6 +30,9 @@ int main(int argc, const char* argv[])
   	tt = system_clock::to_time_t(today);
   	cout << "today is: " << ctime(&tt);
 
+  	// Log file
+  	string fileName = "log.txt";
+  	string accessType[3] = { "request", "grant", "release"};
 
 	// Writing to a file
 	// ofstream myfile;
