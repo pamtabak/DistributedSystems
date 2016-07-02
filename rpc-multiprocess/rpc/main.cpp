@@ -4,7 +4,6 @@
 #include <iostream>
 #include <pthread.h>
 #include <climits>
-#include <chrono>
 #include <math.h>
 
 using namespace std;
