@@ -82,11 +82,10 @@ int main(int argc, const char* argv[])
 	{
 		sleep(randomDouble());
 
-        bzero(buffer, BUFFER_SIZE);
-
-        string s      = "request";
-        const char *c = s.c_str();
-        response      = write(sockFileDesc, c, s.size());
+        // bzero(buffer, BUFFER_SIZE);
+        string request  = "request";
+        const char *req = request.c_str();
+        response        = write(sockFileDesc, req, request.size());
         if(response < 0)
         {
             error((char *) "ERROR writing to socket");
@@ -100,25 +99,26 @@ int main(int argc, const char* argv[])
         }
 
         // Just checking if coordinator has granted this client access
-        std::string access(buffer);
+        string access(buffer);
+        cout << access << endl;
+        bzero(buffer, BUFFER_SIZE);
 
         // Requesting access
         std::size_t found = access.find("grant");
         if (found != std::string::npos)
         {
             // WRITE ON FILE
-            std::cout << "granted" << std::endl;
-        }
+            // std::cout << "granted" << std::endl;
+            // bzero(buffer, BUFFER_SIZE);
 
-        // Release region
-        bzero(buffer, BUFFER_SIZE);
-
-        s        = "release"; // release
-        c        = s.c_str();
-        response = write(sockFileDesc, c, s.size());
-        if(response < 0)
-        {
-            error((char *) "ERROR writing to socket");
+            // Release region
+            string release = "release"; // release
+            const char *r  = release.c_str();
+            response       = write(sockFileDesc, r, release.size());
+            if(response < 0)
+            {
+                error((char *) "ERROR writing to socket");
+            }
         }
 	}
 

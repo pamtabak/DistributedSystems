@@ -18,7 +18,7 @@
 
 #define BUFFER_SIZE 256
 #define PORT_NO 12345
-#define MAX_CONNECTIONS 5
+#define MAX_CONNECTIONS 1000
 
 // using namespace std;
 
@@ -91,18 +91,19 @@ int main(int argc, const char* argv[])
 
     while (true)
     {
+        // Ideia: duas threads. Uma para criar (aceitar) novas conexoes outra para ler e escrever
+
         // clientLen = sizeof(clientAddr);
         // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
         // if(newSockFileDesc < 0)
         // {
         //     error((char *) "ERROR accepting client connection");
         // }
-        // std::cout << newSockFileDesc << std::endl;
+        
         bzero(buffer, BUFFER_SIZE);
         
         // read() blocks until there is something for it to read in the socket
         response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
-        std::cout << buffer << std::endl;
         if(response < 0)
         {
             error((char *) "ERROR reading from socket");
@@ -114,6 +115,8 @@ int main(int argc, const char* argv[])
         }
 
         std::string access(buffer);
+        bzero(buffer, BUFFER_SIZE);
+        std::cout << access << std::endl;
 
         // Requesting access
         std::size_t found = access.find("request");
@@ -132,11 +135,10 @@ int main(int argc, const char* argv[])
         found = access.find("release");
         if (found != std::string::npos)
         {
+            processLine.erase(processLine.begin());
             if (processLine.size() > 0)
             {
                 response = write(processLine[0], "grant", 5);
-
-                processLine.erase(processLine.begin());
             }
         }
 
