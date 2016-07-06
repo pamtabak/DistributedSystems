@@ -4,8 +4,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <math.h>
-#include <string>
 #include <fstream>
+#include <strings.h>
 
 #include <chrono>
 #include <ctime>
@@ -15,14 +15,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <unistd.h>
 
 #define BUFFER_SIZE 256
 #define PORT_NO 12345
 #define MAX_CONNECTIONS 5
 
 #define T 1
-#define X 1
+#define X 100
 
 using namespace std;
 
@@ -49,7 +48,6 @@ int main(int argc, const char* argv[])
 {
 	srand(getpid());
 
-	string accessType[3] = { "request", "grant", "release"};
 	string fileName      = "file.txt"; 
 
 	// Connecting to server
@@ -86,9 +84,9 @@ int main(int argc, const char* argv[])
 
         bzero(buffer, BUFFER_SIZE);
 
-        string s = accessType[0]; // request
+        string s      = "request";
         const char *c = s.c_str();
-        response = write(sockFileDesc, c, s.size());
+        response      = write(sockFileDesc, c, s.size());
         if(response < 0)
         {
             error((char *) "ERROR writing to socket");
@@ -101,7 +99,27 @@ int main(int argc, const char* argv[])
             error((char *) "ERROR reading from socket");
         }
 
-        cout << buffer << endl;
+        // Just checking if coordinator has granted this client access
+        std::string access(buffer);
+
+        // Requesting access
+        std::size_t found = access.find("grant");
+        if (found != std::string::npos)
+        {
+            // WRITE ON FILE
+            std::cout << "granted" << std::endl;
+        }
+
+        // Release region
+        bzero(buffer, BUFFER_SIZE);
+
+        s        = "release"; // release
+        c        = s.c_str();
+        response = write(sockFileDesc, c, s.size());
+        if(response < 0)
+        {
+            error((char *) "ERROR writing to socket");
+        }
 	}
 
 	close(sockFileDesc);
