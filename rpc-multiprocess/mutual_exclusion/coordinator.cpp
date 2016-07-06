@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <vector>
 
 #include <fstream>
 #include <string>
@@ -48,8 +49,10 @@ int main(int argc, const char* argv[])
 
   	// Log file
   	std::string fileName = "log.txt";
-  	std::string accessType[3] = { "request", "grant", "release"};
+  	// std::string accessType[3] = { "request", "grant", "release"};
 
+    // Initializing process line
+    std::vector<int> processLine;
 
   	// Creating server
     int sockFileDesc, newSockFileDesc, response, indexOfZero;
@@ -79,18 +82,27 @@ int main(int argc, const char* argv[])
 
     listen(sockFileDesc, MAX_CONNECTIONS);
 
+    clientLen = sizeof(clientAddr);
+    newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
+    if(newSockFileDesc < 0)
+    {
+        error((char *) "ERROR accepting client connection");
+    }
+
     while (true)
     {
-        clientLen = sizeof(clientAddr);
-        newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
-        if(newSockFileDesc < 0)
-        {
-            error((char *) "ERROR accepting client connection");
-        }
-
+        // clientLen = sizeof(clientAddr);
+        // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
+        // if(newSockFileDesc < 0)
+        // {
+        //     error((char *) "ERROR accepting client connection");
+        // }
+        // std::cout << newSockFileDesc << std::endl;
         bzero(buffer, BUFFER_SIZE);
+        
         // read() blocks until there is something for it to read in the socket
         response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
+        std::cout << buffer << std::endl;
         if(response < 0)
         {
             error((char *) "ERROR reading from socket");
@@ -101,10 +113,33 @@ int main(int argc, const char* argv[])
             continue;
         }
 
-        std::cout << response << std::endl;
+        std::string access(buffer);
 
-        // verifica se ja tem algum processo escrevendo no arquivo e responde o cliente
-        response = write(newSockFileDesc, "OK", 2);
+        // Requesting access
+        std::size_t found = access.find("request");
+        if (found != std::string::npos)
+        {
+            if (processLine.size() == 0)
+            {
+                // Queue is empty
+                response = write(newSockFileDesc, "grant", 5);
+            }
+
+            processLine.push_back(newSockFileDesc);
+        }
+
+        // Release access
+        found = access.find("release");
+        if (found != std::string::npos)
+        {
+            if (processLine.size() > 0)
+            {
+                response = write(processLine[0], "grant", 5);
+
+                processLine.erase(processLine.begin());
+            }
+        }
+
         if(response < 0)
         {
             error((char *) "ERROR writing to socket");
