@@ -16,6 +16,8 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#include "lock.hpp"
+
 #define BUFFER_SIZE 256
 #define PORT_NO 12345
 #define MAX_CONNECTIONS 1000
@@ -23,6 +25,8 @@
 // using namespace std;
 
 // g++ main.cpp -o main.out -std=c++11
+
+// Uma thread para aceitar novas conexoes. Cada nova conexao sera uma thread tambem. Usar lock para ver a fila de processos
 
 void error(char *msg)
 {
@@ -91,8 +95,6 @@ int main(int argc, const char* argv[])
 
     while (true)
     {
-        // Ideia: duas threads. Uma para criar (aceitar) novas conexoes outra para ler e escrever
-
         // clientLen = sizeof(clientAddr);
         // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
         // if(newSockFileDesc < 0)
@@ -116,7 +118,6 @@ int main(int argc, const char* argv[])
 
         std::string access(buffer);
         bzero(buffer, BUFFER_SIZE);
-        std::cout << access << std::endl;
 
         // Requesting access
         std::size_t found = access.find("request");
