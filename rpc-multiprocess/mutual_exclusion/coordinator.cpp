@@ -83,7 +83,7 @@ void *doTheJob (void *arguments)
         else if (response == 0)
         {
             // client has closed its connection
-            continue;
+            break;
         }
 
         std::string access(buffer);
@@ -127,21 +127,23 @@ void *connect (void *arguments)
 {
     struct arg_struct *args = (struct arg_struct *) arguments;
 
-    listen(*args->sockFileDesc, MAX_CONNECTIONS);
-    socklen_t clientLen = sizeof(args->clientAddr);
-    int newSockFileDesc = accept(*args->sockFileDesc, (struct sockaddr *) &args->clientAddr, &clientLen);
-    if(newSockFileDesc < 0)
+    while (true)
     {
-        error((char *) "ERROR accepting client connection");
+        listen(*args->sockFileDesc, MAX_CONNECTIONS);
+        socklen_t clientLen = sizeof(args->clientAddr);
+        int newSockFileDesc = accept(*args->sockFileDesc, (struct sockaddr *) &args->clientAddr, &clientLen);
+        if(newSockFileDesc < 0)
+        {
+            error((char *) "ERROR accepting client connection");
+        }
+
+        // Create Thread to work with this specific client
+        pthread_t client;
+        struct client_struct cArgs;
+        cArgs.newSockFileDesc = &newSockFileDesc;
+        pthread_create(&client, NULL, doTheJob, (void *) &cArgs);
+        pthread_join(client, NULL);
     }
-
-    // Create Thread to work with this specific client
-    pthread_t client;
-    struct client_struct cArgs;
-    cArgs.newSockFileDesc = &newSockFileDesc;
-    pthread_create(&client, NULL, doTheJob, (void *) &cArgs);
-    pthread_join(client, NULL);
-
 }
 
 

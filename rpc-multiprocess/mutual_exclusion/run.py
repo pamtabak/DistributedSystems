@@ -2,7 +2,7 @@ import subprocess
 import time
 from subprocess import Popen, PIPE
 
-k = 1
+k = 2
 y = 1
 arrival = 1
 # if arrival = 0: bulk arrival
