@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package arithmetic;
+
+// The arithmetic service definition.
+service Arithmetic {
+    rpc Exp (ArithmeticRequest) returns (ArithmeticReply) {}
+    rpc Log (ArithmeticRequest) returns (ArithmeticReply) {}
+    rpc Pow (ArithmeticRequest) returns (ArithmeticReply) {}
+    rpc Sqrt (ArithmeticRequest) returns (ArithmeticReply) {}
+}
+
+// The request message containing the request vector and the parameter.
+message ArithmeticRequest {
+    repeated double vec = 1;
+    double param = 2;
+}
+
+// The response message containing the response vector
+message ArithmeticReply {
+    repeated double vec = 1;
+}

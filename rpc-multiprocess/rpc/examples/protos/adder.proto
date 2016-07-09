@@ -6,17 +6,16 @@ package adder;
 
 // The greeter service definition.
 service Adder {
-  // Sends a greeting
-  rpc Add (AdderRequest) returns (AdderReply) {}
+    // Sends a greeting
+    rpc Add (AdderRequest) returns (AdderReply) {}
 }
 
 // The request message containing the user's name.
 message AdderRequest {
-  int32 a = 1;
-  int32 b = 2;
+    repeated int32 values = 1;
 }
 
 // The response message containing the greetings
 message AdderReply {
-  int32 sum = 1;
+    int32 sum = 1;
 }

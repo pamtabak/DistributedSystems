@@ -43,10 +43,10 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check client server
 
-client: adder.pb.o adder.grpc.pb.o client.o
+client: arithmetic.pb.o arithmetic.grpc.pb.o client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-server: adder.pb.o adder.grpc.pb.o server.o
+server: arithmetic.pb.o arithmetic.grpc.pb.o server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 
