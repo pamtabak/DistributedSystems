@@ -26,8 +26,13 @@
 
 // g++ main.cpp -o main.out -std=c++11
 
+using std::chrono::system_clock;
+
 std::vector<int> processLine;
 Lock lock;
+std::ofstream myfile;
+std::string fileName = "log.txt";
+std::time_t tt;
 
 struct arg_struct
 {
@@ -57,18 +62,6 @@ void doTheJob (int newSockFileDesc)
     // while (true)
     while (read(newSockFileDesc, buffer, BUFFER_SIZE - 1) > 0)
     {
-        // bzero(buffer, BUFFER_SIZE);
-        // response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
-        // if(response < 0)
-        // {
-        //     error((char *) "ERROR reading from socket");
-        // }
-        // else if (response == 0)
-        // {
-        //     // client has closed its connection
-        //     break;
-        // }
-
         std::string access(buffer);
         bzero(buffer, BUFFER_SIZE);
 
@@ -76,27 +69,47 @@ void doTheJob (int newSockFileDesc)
         std::size_t found = access.find("request");
         if (found != std::string::npos)
         {
-            // lock.acquire();
+            lock.acquire();
+            system_clock::time_point today = system_clock::now();
+            tt = system_clock::to_time_t(today);
+            std::string str(std::ctime(&tt));
+            std::string msg = "Received request message. RTC: " + str;
+            writeToFile(myfile, msg, fileName);
             if (processLine.size() == 0)
             {
                 // Queue is empty
+                system_clock::time_point today = system_clock::now();
+                tt = system_clock::to_time_t(today);
+                std::string str(std::ctime(&tt));
+                std::string msg = "Sending grant message to this process. RTC: " + str;
+                writeToFile(myfile, msg, fileName);
                 response = write(newSockFileDesc, "grant", 5);
             }
             processLine.push_back(newSockFileDesc);
-            // lock.release();
+            lock.release();
         }
 
         // Release access
         found = access.find("release");
         if (found != std::string::npos)
         {
-            // lock.acquire(); // Dont know if it need lock here
+            lock.acquire(); // Dont know if it need lock here
+            system_clock::time_point today = system_clock::now();
+            tt = system_clock::to_time_t(today);
+            std::string str(std::ctime(&tt));
+            std::string msg = "Received release message. RTC: " + str;
+            writeToFile(myfile, msg, fileName);
             processLine.erase(processLine.begin());
             if (processLine.size() > 0)
             {
+                system_clock::time_point today = system_clock::now();
+                tt = system_clock::to_time_t(today);
+                std::string str(std::ctime(&tt));
+                std::string msg = "Sending grant message to other process. RTC: " + str;
+                writeToFile(myfile, msg, fileName);
                 response = write(processLine[0], "grant", 5);
             }
-            // lock.release(); // Dont know if it need lock here
+            lock.release(); // Dont know if it need lock here
         }
 
         if(response < 0)
@@ -116,13 +129,17 @@ void *connect (void *arguments)
 
     listen(*args->sockFileDesc, MAX_CONNECTIONS);
     socklen_t clientLen = sizeof(args->clientAddr);
+    int connections = 0;
     while (true)
     {
         int newSockFileDesc = accept(*args->sockFileDesc, (struct sockaddr *) &args->clientAddr, &clientLen);
+        connections++;
         if(newSockFileDesc < 0)
         {
             error((char *) "ERROR accepting client connection");
         }
+
+        std::cout << connections << std::endl;
 
          /* Create child process */
         int pid = fork();
@@ -137,9 +154,7 @@ void *connect (void *arguments)
         {
            /* This is the client process */
            doTheJob(newSockFileDesc);
-           std::cout << "oi" << std::endl;
            close(newSockFileDesc);
-           // kill(pid,SIGKILL);
            exit(0);
         }
         else 
@@ -153,15 +168,10 @@ void *connect (void *arguments)
 int main(int argc, const char* argv[])
 {
 	// get RTC (real time clock)
-	using std::chrono::system_clock;
-	system_clock::time_point today = system_clock::now(); 
+	system_clock::time_point today = system_clock::now();
 
-	std::time_t tt;
   	tt = system_clock::to_time_t(today);
   	std::cout << "today is: " << std::ctime(&tt) << std::endl;
-
-  	// Log file
-  	std::string fileName = "log.txt";
 
   	// Creating server
     int sockFileDesc, newSockFileDesc, response, indexOfZero;

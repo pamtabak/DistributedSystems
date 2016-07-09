@@ -20,7 +20,7 @@
 #define PORT_NO 12345
 
 #define T 1
-#define X 300
+#define X 100
 
 using namespace std;
 
@@ -80,8 +80,11 @@ int main(int argc, const char* argv[])
 
 	for (int i = 0; i < X; i++)
 	{
-		// sleep(randomDouble());
-        sleep(5);
+        double random = randomDouble();
+        unsigned int microseconds = (int) (random * 1000);
+        cout << microseconds << endl;
+		usleep(microseconds);
+        // sleep(5.0);
 
         // bzero(buffer, BUFFER_SIZE);
         string request  = "request";
