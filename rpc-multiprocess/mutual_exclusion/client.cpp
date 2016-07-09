@@ -21,7 +21,7 @@
 #define MAX_CONNECTIONS 5
 
 #define T 1
-#define X 100
+#define X 500
 
 using namespace std;
 
@@ -48,7 +48,8 @@ int main(int argc, const char* argv[])
 {
 	srand(getpid());
 
-	string fileName      = "file.txt"; 
+    ofstream myfile;
+	string fileName = "file.txt"; 
 
 	// Connecting to server
 	int sockFileDesc, portNo, response;
@@ -81,6 +82,7 @@ int main(int argc, const char* argv[])
 	for (int i = 0; i < X; i++)
 	{
 		sleep(randomDouble());
+        // sleep(10);
 
         // bzero(buffer, BUFFER_SIZE);
         string request  = "request";
@@ -108,11 +110,11 @@ int main(int argc, const char* argv[])
         if (found != std::string::npos)
         {
             // WRITE ON FILE
-            // std::cout << "granted" << std::endl;
-            // bzero(buffer, BUFFER_SIZE);
+            string out = "I`m client with process id = " + to_string(getpid());
+            writeToFile(myfile, out, fileName);
 
             // Release region
-            string release = "release"; // release
+            string release = "release";
             const char *r  = release.c_str();
             response       = write(sockFileDesc, r, release.size());
             if(response < 0)

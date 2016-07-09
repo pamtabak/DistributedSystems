@@ -6,6 +6,7 @@
 
 class Lock
 {
+public:	
 	bool held = 0;
 
 	void acquire()

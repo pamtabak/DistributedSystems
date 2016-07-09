@@ -23,24 +23,16 @@
 #define PORT_NO 12345
 #define MAX_CONNECTIONS 1000
 
-// using namespace std;
-
 // g++ main.cpp -o main.out -std=c++11
 
-// Uma thread para aceitar novas conexoes. Cada nova conexao sera uma thread tambem. Usar lock para ver a fila de processos
-
 std::vector<int> processLine;
+Lock lock;
 
 struct arg_struct
 {
     int *sockFileDesc;
     struct sockaddr_in * clientAddr;
 
-};
-
-struct client_struct
-{
-    int *newSockFileDesc;
 };
 
 void error(char *msg)
@@ -56,35 +48,25 @@ void writeToFile (std::ofstream &myfile, std::string text, std::string fileName)
 	myfile.close();
 }
 
-void *doTheJob (void *arguments)
+void doTheJob (int newSockFileDesc)
 {
-    struct client_struct *args = (struct client_struct *) arguments;
     char buffer[BUFFER_SIZE];
     int response;
-    int newSockFileDesc = *args->newSockFileDesc;
 
-    while (true)
+    // while (true)
+    while (read(newSockFileDesc, buffer, BUFFER_SIZE - 1) > 0)
     {
-        // clientLen = sizeof(clientAddr);
-        // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
-        // if(newSockFileDesc < 0)
+        // bzero(buffer, BUFFER_SIZE);
+        // response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
+        // if(response < 0)
         // {
-        //     error((char *) "ERROR accepting client connection");
+        //     error((char *) "ERROR reading from socket");
         // }
-        
-        bzero(buffer, BUFFER_SIZE);
-        
-        // read() blocks until there is something for it to read in the socket
-        response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
-        if(response < 0)
-        {
-            error((char *) "ERROR reading from socket");
-        }
-        else if (response == 0)
-        {
-            // client has closed its connection
-            break;
-        }
+        // else if (response == 0)
+        // {
+        //     // client has closed its connection
+        //     break;
+        // }
 
         std::string access(buffer);
         bzero(buffer, BUFFER_SIZE);
@@ -93,56 +75,74 @@ void *doTheJob (void *arguments)
         std::size_t found = access.find("request");
         if (found != std::string::npos)
         {
+            // lock.acquire();
             if (processLine.size() == 0)
             {
                 // Queue is empty
                 response = write(newSockFileDesc, "grant", 5);
             }
-
             processLine.push_back(newSockFileDesc);
+            // lock.release();
         }
 
         // Release access
         found = access.find("release");
         if (found != std::string::npos)
         {
+            // lock.acquire(); // Dont know if it need lock here
             processLine.erase(processLine.begin());
             if (processLine.size() > 0)
             {
                 response = write(processLine[0], "grant", 5);
             }
+            // lock.release(); // Dont know if it need lock here
         }
 
         if(response < 0)
         {
             error((char *) "ERROR writing to socket");
         }
+
+        bzero(buffer, BUFFER_SIZE);
     }
 
     close(newSockFileDesc);
-    // close(sockFileDesc);
 }
 
 void *connect (void *arguments)
 {
     struct arg_struct *args = (struct arg_struct *) arguments;
 
+    listen(*args->sockFileDesc, MAX_CONNECTIONS);
+    socklen_t clientLen = sizeof(args->clientAddr);
     while (true)
     {
-        listen(*args->sockFileDesc, MAX_CONNECTIONS);
-        socklen_t clientLen = sizeof(args->clientAddr);
         int newSockFileDesc = accept(*args->sockFileDesc, (struct sockaddr *) &args->clientAddr, &clientLen);
         if(newSockFileDesc < 0)
         {
             error((char *) "ERROR accepting client connection");
         }
 
-        // Create Thread to work with this specific client
-        pthread_t client;
-        struct client_struct cArgs;
-        cArgs.newSockFileDesc = &newSockFileDesc;
-        pthread_create(&client, NULL, doTheJob, (void *) &cArgs);
-        pthread_join(client, NULL);
+         /* Create child process */
+        int pid = fork();
+          
+        if (pid < 0) 
+        {
+           perror("ERROR on fork");
+           exit(1);
+        }
+        
+        if (pid == 0) 
+        {
+           /* This is the client process */
+           // close(sockfd);
+           doTheJob(newSockFileDesc);
+           // exit(0);
+        }
+        else 
+        {
+           close(newSockFileDesc);
+        }
     }
 }
 
@@ -159,7 +159,6 @@ int main(int argc, const char* argv[])
 
   	// Log file
   	std::string fileName = "log.txt";
-  	// std::string accessType[3] = { "request", "grant", "release"};
 
   	// Creating server
     int sockFileDesc, newSockFileDesc, response, indexOfZero;
@@ -186,15 +185,6 @@ int main(int argc, const char* argv[])
         error((char *) "ERROR binding socket");
     }
 
-    // listen(sockFileDesc, MAX_CONNECTIONS);
-
-    // socklen_t  clientLen = sizeof(clientAddr);
-    // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
-    // if(newSockFileDesc < 0)
-    // {
-    //     error((char *) "ERROR accepting client connection");
-    // }
-
     // Thread to accept new connections
     pthread_t acceptConnections;
     struct arg_struct pArgs;
@@ -202,65 +192,6 @@ int main(int argc, const char* argv[])
     pArgs.clientAddr   = (struct sockaddr_in *) &clientAddr;
     pthread_create(&acceptConnections, NULL, connect, (void *) &pArgs);
     pthread_join(acceptConnections, NULL);
-
-    // while (true)
-    // {
-    //     // clientLen = sizeof(clientAddr);
-    //     // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
-    //     // if(newSockFileDesc < 0)
-    //     // {
-    //     //     error((char *) "ERROR accepting client connection");
-    //     // }
-        
-    //     bzero(buffer, BUFFER_SIZE);
-        
-    //     // read() blocks until there is something for it to read in the socket
-    //     response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
-    //     if(response < 0)
-    //     {
-    //         error((char *) "ERROR reading from socket");
-    //     }
-    //     else if (response == 0)
-    //     {
-    //         // client has closed its connection
-    //         continue;
-    //     }
-
-    //     std::string access(buffer);
-    //     bzero(buffer, BUFFER_SIZE);
-
-    //     // Requesting access
-    //     std::size_t found = access.find("request");
-    //     if (found != std::string::npos)
-    //     {
-    //         if (processLine.size() == 0)
-    //         {
-    //             // Queue is empty
-    //             response = write(newSockFileDesc, "grant", 5);
-    //         }
-
-    //         processLine.push_back(newSockFileDesc);
-    //     }
-
-    //     // Release access
-    //     found = access.find("release");
-    //     if (found != std::string::npos)
-    //     {
-    //         processLine.erase(processLine.begin());
-    //         if (processLine.size() > 0)
-    //         {
-    //             response = write(processLine[0], "grant", 5);
-    //         }
-    //     }
-
-    //     if(response < 0)
-    //     {
-    //         error((char *) "ERROR writing to socket");
-    //     }
-    // }
-
-    // close(newSockFileDesc);
-    // close(sockFileDesc);
 	
 	// Writing to a file
 	// ofstream myfile;

@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE
 
 k = 2
 y = 1
-arrival = 1
+arrival = 0
 # if arrival = 0: bulk arrival
 # if arrival = 1: sequential arrival
 
