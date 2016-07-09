@@ -18,10 +18,9 @@
 
 #define BUFFER_SIZE 256
 #define PORT_NO 12345
-#define MAX_CONNECTIONS 5
 
 #define T 1
-#define X 500
+#define X 300
 
 using namespace std;
 
@@ -81,8 +80,8 @@ int main(int argc, const char* argv[])
 
 	for (int i = 0; i < X; i++)
 	{
-		sleep(randomDouble());
-        // sleep(10);
+		// sleep(randomDouble());
+        sleep(5);
 
         // bzero(buffer, BUFFER_SIZE);
         string request  = "request";
@@ -124,7 +123,7 @@ int main(int argc, const char* argv[])
         }
 	}
 
-	close(sockFileDesc);
+    close(sockFileDesc);
 
 	return 0;
 }

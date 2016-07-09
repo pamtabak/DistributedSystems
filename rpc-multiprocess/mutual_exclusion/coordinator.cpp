@@ -16,6 +16,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include "lock.hpp"
 
@@ -135,9 +136,11 @@ void *connect (void *arguments)
         if (pid == 0) 
         {
            /* This is the client process */
-           // close(sockfd);
            doTheJob(newSockFileDesc);
-           // exit(0);
+           std::cout << "oi" << std::endl;
+           close(newSockFileDesc);
+           // kill(pid,SIGKILL);
+           exit(0);
         }
         else 
         {
