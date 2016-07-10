@@ -5,6 +5,8 @@
 #include <iostream>
 #include <grpc++/grpc++.h>
 
+std::chrono::high_resolution_clock::time_point startTime;
+
 #include "arithmetic.grpc.pb.h"
 
 class ArithmeticClient
@@ -150,30 +152,104 @@ private:
     std::unique_ptr<arithmetic::Arithmetic::Stub> stub_;
 };
 
-int main(int argc, char** argv)
+struct args
+{
+    int id;
+    double* vec;
+    int rangeFrom;
+    int rangeTo;
+};
+
+double random(double min, double max)
+{
+    double f = (double)rand() / RAND_MAX;
+    return min + f * (max - min);
+}
+
+void *test(void* arguments)
+{
+    struct args* args = (struct args *) arguments;
+    int sz = args->rangeTo - args->rangeFrom;
+    double* v = new double[sz];
+    for (int i = 0; i < sz; i++)
+    {
+        v[i] = args->vec[args->rangeFrom + i];
+    }
+
+    ArithmeticClient arithmetic(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
+
+    arithmetic.Exp(v, sz);
+
+    for (int i = 0; i < sz; i++)
+    {
+        args->vec[args->rangeFrom + i] = v[i];
+    }
+}
+
+int main(int argc, const char* argv[])
 {
     // Instantiate the client. It requires a channel, out of which the actual RPCs
     // are created. This channel models a connection to an endpoint (in this case,
     // localhost at port 50051). We indicate that the channel isn't authenticated
     // (use of InsecureChannelCredentials()).
-    ArithmeticClient arithmetic(grpc::CreateChannel("localhost:50051",
-                                          grpc::InsecureChannelCredentials()));
+//    ArithmeticClient arithmetic(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
 
-    double vec[] = {1,2,3,4,5};
+    startTime = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < 5; i++)
+    if(argc != 3)
     {
-        std::cout << vec[i] << std::endl;
+        std::cout << "Wrong parameters" << std::endl;
+        exit(-1);
     }
 
-    std::cout << std::endl << std::endl;
+    // Extracting info regarding number of threads and size of vector, passed as parameters to this program
+    int n = atoi(argv[1]); // vector size
+    int k = atoi(argv[2]); // number of threads
 
-    arithmetic.Log(vec, 5);
+    // Initializing seed
+    time_t seed = time(NULL);
+    srand(seed);
 
-    for (int i = 0; i < 5; i++)
+    // Initializing vector
+    double *v = new double[n];
+    for (int i = 0; i < n; i++)
     {
-        std::cout << vec[i] << std::endl;
+        v[i] = random(1, 10);
     }
+
+    // Creating threads
+    pthread_t *threads = (pthread_t *) malloc(k * sizeof(pthread_t));
+    struct args **tArgs  = (struct args **) malloc(k * sizeof(struct args *));
+    int delta = n / k;
+    int lastValue = 0;
+    for (int i = 0; i < k; i++)
+    {
+        tArgs[i]            = (args *) malloc(sizeof(args));
+        tArgs[i]->id        = i + 1;
+        tArgs[i]->vec       = v;
+        tArgs[i]->rangeFrom = lastValue;
+        tArgs[i]->rangeTo   = lastValue + delta;
+
+        lastValue += delta;
+        if (i == (k - 1))
+        {
+            tArgs[i]->rangeTo = n;
+        }
+
+        pthread_create(&threads[i], NULL, test, (void *) tArgs[i]);
+    }
+
+    // Thread Join
+    for(int i = 0; i < k; ++i)
+    {
+        pthread_join(threads[i], NULL);
+    }
+
+    delete [] v, threads;
+
+    std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> endTimeSpan              = std::chrono::duration_cast< std::chrono::duration<double> >(endTime - startTime);
+    printf("end: %lf secs\n", endTimeSpan.count());
 
     return 0;
 }
