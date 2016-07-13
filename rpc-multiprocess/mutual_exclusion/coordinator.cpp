@@ -38,7 +38,7 @@ std::ofstream myfile;
 std::string fileName = "log.txt";
 std::time_t tt;
 
-int numberOfClients = 1;
+int numberOfClients = 128;
 
 struct arg_struct
 {

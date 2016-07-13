@@ -1,6 +1,6 @@
 import re #regex
 
-numberOfClients = 10;
+numberOfClients = 128;
 
 with open("file.txt") as f:
     content = f.readlines()
