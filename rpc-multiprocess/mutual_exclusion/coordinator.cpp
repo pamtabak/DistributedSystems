@@ -24,21 +24,26 @@
 #define PORT_NO 12345
 #define MAX_CONNECTIONS 1000
 
-// g++ main.cpp -o main.out -std=c++11
+// g++ coordinator.cpp -o coordinator.out -std=c++11
 
 using std::chrono::system_clock;
 
+std::chrono::high_resolution_clock::time_point startTime;
+std::chrono::high_resolution_clock::time_point endTime;
+
 std::vector<int> processLine;
 Lock lock;
+Lock clientsLock; // Just checking client connections (in order to get total execution time)
 std::ofstream myfile;
 std::string fileName = "log.txt";
 std::time_t tt;
+
+int numberOfClients = 1;
 
 struct arg_struct
 {
     int *sockFileDesc;
     struct sockaddr_in * clientAddr;
-
 };
 
 void error(char *msg)
@@ -119,8 +124,6 @@ void doTheJob (int newSockFileDesc)
 
         bzero(buffer, BUFFER_SIZE);
     }
-
-    close(newSockFileDesc);
 }
 
 void *connect (void *arguments)
@@ -130,16 +133,23 @@ void *connect (void *arguments)
     listen(*args->sockFileDesc, MAX_CONNECTIONS);
     socklen_t clientLen = sizeof(args->clientAddr);
     int connections = 0;
+    
     while (true)
     {
         int newSockFileDesc = accept(*args->sockFileDesc, (struct sockaddr *) &args->clientAddr, &clientLen);
-        connections++;
         if(newSockFileDesc < 0)
         {
             error((char *) "ERROR accepting client connection");
         }
 
+        clientsLock.acquire();
+        connections++;
         std::cout << connections << std::endl;
+        if (connections == 1)
+        {
+            startTime = std::chrono::high_resolution_clock::now();
+        }
+        clientsLock.release();
 
          /* Create child process */
         int pid = fork();
@@ -152,14 +162,22 @@ void *connect (void *arguments)
         
         if (pid == 0) 
         {
-           /* This is the client process */
-           doTheJob(newSockFileDesc);
-           close(newSockFileDesc);
-           exit(0);
+            doTheJob(newSockFileDesc);
+            // Closing connection
+            clientsLock.acquire();
+            if (connections == numberOfClients)
+            {
+                endTime = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> endTimeSpan = std::chrono::duration_cast< std::chrono::duration<double> >(endTime - startTime);
+                std::cout << "end: " << endTimeSpan.count() << " secs" << std::endl;
+            }
+            clientsLock.release();
+            close(newSockFileDesc);
+            exit(0);
         }
         else 
         {
-           close(newSockFileDesc);
+            close(newSockFileDesc);
         }
     }
 }
@@ -206,8 +224,5 @@ int main(int argc, const char* argv[])
     pthread_create(&acceptConnections, NULL, connect, (void *) &pArgs);
     pthread_join(acceptConnections, NULL);
 	
-	// Writing to a file
-	// ofstream myfile;
-	// writeToFile(myfile, "oie", "log.txt");
 	return 0;
 }
