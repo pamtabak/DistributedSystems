@@ -14,7 +14,6 @@ public:
     grpc::Status Exp(grpc::ServerContext* context, const arithmetic::ArithmeticRequest* request,
                      arithmetic::ArithmeticReply* reply) override
     {
-        std::cout << request->ByteSize() << std::endl;
         for(int i = 0, sz = request->vec_size(); i < sz; i++)
         {
             reply->add_vec(exp(request->vec(i)));

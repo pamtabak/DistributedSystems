@@ -9,6 +9,8 @@ std::chrono::high_resolution_clock::time_point startTime;
 
 #include "arithmetic.grpc.pb.h"
 
+#define MAX_MESSAGE_BYTES 32000000
+
 class ArithmeticClient
 {
 public:
@@ -18,33 +20,40 @@ public:
     {
         // Data we are sending to the server.
         arithmetic::ArithmeticRequest request;
-        for (int i = 0; i < sz; i++)
+
+        int req_i = 0, rep_i = 0;
+        while (req_i < sz)
         {
-            request.add_vec(vec[i]);
-        }
-
-        // Container for the data we expect from the server.
-        arithmetic::ArithmeticReply reply;
-
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
-        grpc::ClientContext context;
-
-        // The actual RPC.
-        grpc::Status status = stub_->Exp(&context, request, &reply);
-
-        // Act upon its status.
-        if (status.ok())
-        {
-            // vec = reply.mutable_vec()->mutable_data(); -> doesn't change the vec ????
-            for (int i = 0; i < sz; i++ )
+            request.clear_vec();
+            while (req_i < sz && request.ByteSize() < MAX_MESSAGE_BYTES)
             {
-                vec[i] = reply.vec(i);
+                request.add_vec(vec[req_i]);
+                req_i++;
             }
-        }
-        else
-        {
-            std::cout << "RPC failed" << std::endl;
+
+            // Container for the data we expect from the server.
+            arithmetic::ArithmeticReply reply;
+
+            // Context for the client. It could be used to convey extra information to
+            // the server and/or tweak certain RPC behaviors.
+            grpc::ClientContext context;
+
+            // The actual RPC.
+            grpc::Status status = stub_->Exp(&context, request, &reply);
+
+            // Act upon its status.
+            if (status.ok())
+            {
+                for (int i = 0, vec_sz = reply.vec_size(); i < vec_sz; i++ )
+                {
+                    vec[rep_i] = reply.vec(i);
+                    rep_i++;
+                }
+            }
+            else
+            {
+                std::cout << "RPC failed" << std::endl;
+            }
         }
     }
 
@@ -52,32 +61,40 @@ public:
     {
         // Data we are sending to the server.
         arithmetic::ArithmeticRequest request;
-        for (int i = 0; i < sz; i++)
+
+        int req_i = 0, rep_i = 0;
+        while (req_i < sz)
         {
-            request.add_vec(vec[i]);
-        }
-
-        // Container for the data we expect from the server.
-        arithmetic::ArithmeticReply reply;
-
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
-        grpc::ClientContext context;
-
-        // The actual RPC.
-        grpc::Status status = stub_->Log(&context, request, &reply);
-
-        // Act upon its status.
-        if (status.ok())
-        {
-            for (int i = 0; i < sz; i++ )
+            request.clear_vec();
+            while (req_i < sz && request.ByteSize() < MAX_MESSAGE_BYTES)
             {
-                vec[i] = reply.vec(i);
+                request.add_vec(vec[req_i]);
+                req_i++;
             }
-        }
-        else
-        {
-            std::cout << "RPC failed" << std::endl;
+
+            // Container for the data we expect from the server.
+            arithmetic::ArithmeticReply reply;
+
+            // Context for the client. It could be used to convey extra information to
+            // the server and/or tweak certain RPC behaviors.
+            grpc::ClientContext context;
+
+            // The actual RPC.
+            grpc::Status status = stub_->Log(&context, request, &reply);
+
+            // Act upon its status.
+            if (status.ok())
+            {
+                for (int i = 0, vec_sz = reply.vec_size(); i < vec_sz; i++ )
+                {
+                    vec[rep_i] = reply.vec(i);
+                    rep_i++;
+                }
+            }
+            else
+            {
+                std::cout << "RPC failed" << std::endl;
+            }
         }
     }
 
@@ -85,33 +102,40 @@ public:
     {
         // Data we are sending to the server.
         arithmetic::ArithmeticRequest request;
-        for (int i = 0; i < sz; i++)
+
+        int req_i = 0, rep_i = 0;
+        while (req_i < sz)
         {
-            request.add_vec(vec[i]);
-        }
-        request.set_param(param);
-
-        // Container for the data we expect from the server.
-        arithmetic::ArithmeticReply reply;
-
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
-        grpc::ClientContext context;
-
-        // The actual RPC.
-        grpc::Status status = stub_->Exp(&context, request, &reply);
-
-        // Act upon its status.
-        if (status.ok())
-        {
-            for (int i = 0; i < sz; i++ )
+            request.clear_vec();
+            while (req_i < sz && request.ByteSize() < MAX_MESSAGE_BYTES)
             {
-                vec[i] = reply.vec(i);
+                request.add_vec(vec[req_i]);
+                req_i++;
             }
-        }
-        else
-        {
-            std::cout << "RPC failed" << std::endl;
+
+            // Container for the data we expect from the server.
+            arithmetic::ArithmeticReply reply;
+
+            // Context for the client. It could be used to convey extra information to
+            // the server and/or tweak certain RPC behaviors.
+            grpc::ClientContext context;
+
+            // The actual RPC.
+            grpc::Status status = stub_->Pow(&context, request, &reply);
+
+            // Act upon its status.
+            if (status.ok())
+            {
+                for (int i = 0, vec_sz = reply.vec_size(); i < vec_sz; i++ )
+                {
+                    vec[rep_i] = reply.vec(i);
+                    rep_i++;
+                }
+            }
+            else
+            {
+                std::cout << "RPC failed" << std::endl;
+            }
         }
     }
 
@@ -119,32 +143,40 @@ public:
     {
         // Data we are sending to the server.
         arithmetic::ArithmeticRequest request;
-        for (int i = 0; i < sz; i++)
+
+        int req_i = 0, rep_i = 0;
+        while (req_i < sz)
         {
-            request.add_vec(vec[i]);
-        }
-
-        // Container for the data we expect from the server.
-        arithmetic::ArithmeticReply reply;
-
-        // Context for the client. It could be used to convey extra information to
-        // the server and/or tweak certain RPC behaviors.
-        grpc::ClientContext context;
-
-        // The actual RPC.
-        grpc::Status status = stub_->Sqrt(&context, request, &reply);
-
-        // Act upon its status.
-        if (status.ok())
-        {
-            for (int i = 0; i < sz; i++ )
+            request.clear_vec();
+            while (req_i < sz && request.ByteSize() < MAX_MESSAGE_BYTES)
             {
-                vec[i] = reply.vec(i);
+                request.add_vec(vec[req_i]);
+                req_i++;
             }
-        }
-        else
-        {
-            std::cout << "RPC failed" << std::endl;
+
+            // Container for the data we expect from the server.
+            arithmetic::ArithmeticReply reply;
+
+            // Context for the client. It could be used to convey extra information to
+            // the server and/or tweak certain RPC behaviors.
+            grpc::ClientContext context;
+
+            // The actual RPC.
+            grpc::Status status = stub_->Sqrt(&context, request, &reply);
+
+            // Act upon its status.
+            if (status.ok())
+            {
+                for (int i = 0, vec_sz = reply.vec_size(); i < vec_sz; i++ )
+                {
+                    vec[rep_i] = reply.vec(i);
+                    rep_i++;
+                }
+            }
+            else
+            {
+                std::cout << "RPC failed" << std::endl;
+            }
         }
     }
 
@@ -154,10 +186,10 @@ private:
 
 struct args
 {
-    int id;
     double* vec;
     int rangeFrom;
     int rangeTo;
+    std::string op;
 };
 
 double random(double min, double max)
@@ -166,7 +198,7 @@ double random(double min, double max)
     return min + f * (max - min);
 }
 
-void *test(void* arguments)
+void *func(void* arguments)
 {
     struct args* args = (struct args *) arguments;
     int sz = args->rangeTo - args->rangeFrom;
@@ -178,7 +210,28 @@ void *test(void* arguments)
 
     ArithmeticClient arithmetic(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
 
-    arithmetic.Exp(v, sz);
+
+    if (args->op == "exp")
+    {
+        arithmetic.Exp(v, sz);
+    }
+    else if (args->op == "log")
+    {
+        arithmetic.Log(v, sz);
+    }
+    else if (args->op == "pow2")
+    {
+        arithmetic.Pow(v, sz, 2);
+    }
+    else if (args->op == "sqrt")
+    {
+        arithmetic.Sqrt(v, sz);
+    }
+    else
+    {
+        printf("Undefined Operation\n");
+        pthread_exit(NULL);
+    }
 
     for (int i = 0; i < sz; i++)
     {
@@ -188,15 +241,9 @@ void *test(void* arguments)
 
 int main(int argc, const char* argv[])
 {
-    // Instantiate the client. It requires a channel, out of which the actual RPCs
-    // are created. This channel models a connection to an endpoint (in this case,
-    // localhost at port 50051). We indicate that the channel isn't authenticated
-    // (use of InsecureChannelCredentials()).
-//    ArithmeticClient arithmetic(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
-
     startTime = std::chrono::high_resolution_clock::now();
 
-    if(argc != 3)
+    if(argc != 4)
     {
         std::cout << "Wrong parameters" << std::endl;
         exit(-1);
@@ -205,6 +252,7 @@ int main(int argc, const char* argv[])
     // Extracting info regarding number of threads and size of vector, passed as parameters to this program
     int n = atoi(argv[1]); // vector size
     int k = atoi(argv[2]); // number of threads
+    std::string op = argv[3]; // operation to be done
 
     // Initializing seed
     time_t seed = time(NULL);
@@ -214,7 +262,7 @@ int main(int argc, const char* argv[])
     double *v = new double[n];
     for (int i = 0; i < n; i++)
     {
-        v[i] = random(1, 10);
+        v[i] = random(1, 100);
     }
 
     // Creating threads
@@ -225,10 +273,10 @@ int main(int argc, const char* argv[])
     for (int i = 0; i < k; i++)
     {
         tArgs[i]            = (args *) malloc(sizeof(args));
-        tArgs[i]->id        = i + 1;
         tArgs[i]->vec       = v;
         tArgs[i]->rangeFrom = lastValue;
         tArgs[i]->rangeTo   = lastValue + delta;
+        tArgs[i]->op        = op;
 
         lastValue += delta;
         if (i == (k - 1))
@@ -236,7 +284,7 @@ int main(int argc, const char* argv[])
             tArgs[i]->rangeTo = n;
         }
 
-        pthread_create(&threads[i], NULL, test, (void *) tArgs[i]);
+        pthread_create(&threads[i], NULL, func, (void *) tArgs[i]);
     }
 
     // Thread Join
