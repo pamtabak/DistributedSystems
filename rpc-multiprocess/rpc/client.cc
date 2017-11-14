@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <grpc++/grpc++.h>
+#include <fstream>
 
 std::chrono::high_resolution_clock::time_point startTime;
 
@@ -189,7 +190,7 @@ struct args
     double* vec;
     int rangeFrom;
     int rangeTo;
-    std::string op;
+    int op_code;
 };
 
 double random(double min, double max)
@@ -202,40 +203,37 @@ void *func(void* arguments)
 {
     struct args* args = (struct args *) arguments;
     int sz = args->rangeTo - args->rangeFrom;
-    double* v = new double[sz];
+    double* vector = new double[sz];
     for (int i = 0; i < sz; i++)
     {
-        v[i] = args->vec[args->rangeFrom + i];
+        vector[i] = args->vec[args->rangeFrom + i];
     }
 
     ArithmeticClient arithmetic(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
 
+    switch (args->op_code)
+    {
+        case 0:
+            arithmetic.Exp(vector, sz);
+            break;
+        case 1:
+            arithmetic.Log(vector, sz);
+            break;
+        case 2:
+            arithmetic.Pow(vector, sz, 2);
+            break;
+        case 3:
+            arithmetic.Sqrt(vector, sz);
+            break;
+        default:
+            printf("Undefined Operation\n");
+            pthread_exit(NULL);
 
-    if (args->op == "exp")
-    {
-        arithmetic.Exp(v, sz);
-    }
-    else if (args->op == "log")
-    {
-        arithmetic.Log(v, sz);
-    }
-    else if (args->op == "pow2")
-    {
-        arithmetic.Pow(v, sz, 2);
-    }
-    else if (args->op == "sqrt")
-    {
-        arithmetic.Sqrt(v, sz);
-    }
-    else
-    {
-        printf("Undefined Operation\n");
-        pthread_exit(NULL);
     }
 
     for (int i = 0; i < sz; i++)
     {
-        args->vec[args->rangeFrom + i] = v[i];
+        args->vec[args->rangeFrom + i] = vector[i];
     }
 }
 
@@ -252,7 +250,7 @@ int main(int argc, const char* argv[])
     // Extracting info regarding number of threads and size of vector, passed as parameters to this program
     int n = atoi(argv[1]); // vector size
     int k = atoi(argv[2]); // number of threads
-    std::string op = argv[3]; // operation to be done
+    int op_code = atoi(argv[3]); // operation to be done
 
     // Initializing seed
     time_t seed = time(NULL);
@@ -272,11 +270,11 @@ int main(int argc, const char* argv[])
     int lastValue = 0;
     for (int i = 0; i < k; i++)
     {
-        tArgs[i]            = (args *) malloc(sizeof(args));
+        tArgs[i]            = (struct args *) malloc(sizeof(args));
         tArgs[i]->vec       = v;
         tArgs[i]->rangeFrom = lastValue;
         tArgs[i]->rangeTo   = lastValue + delta;
-        tArgs[i]->op        = op;
+        tArgs[i]->op_code   = op_code;
 
         lastValue += delta;
         if (i == (k - 1))
@@ -285,6 +283,7 @@ int main(int argc, const char* argv[])
         }
 
         pthread_create(&threads[i], NULL, func, (void *) tArgs[i]);
+
     }
 
     // Thread Join
@@ -297,7 +296,7 @@ int main(int argc, const char* argv[])
 
     std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> endTimeSpan              = std::chrono::duration_cast< std::chrono::duration<double> >(endTime - startTime);
-    printf("end: %lf secs\n", endTimeSpan.count());
+    printf("%lf\n", endTimeSpan.count());
 
     return 0;
 }
