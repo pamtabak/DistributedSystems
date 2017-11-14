@@ -15,14 +15,36 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <signal.h>
+
+#include "lock.hpp"
 
 #define BUFFER_SIZE 256
 #define PORT_NO 12345
-#define MAX_CONNECTIONS 5
+#define MAX_CONNECTIONS 1000
 
-// using namespace std;
+// g++ coordinator.cpp -o coordinator.out -std=c++11
 
-// g++ main.cpp -o main.out -std=c++11
+using std::chrono::system_clock;
+
+std::chrono::high_resolution_clock::time_point startTime;
+std::chrono::high_resolution_clock::time_point endTime;
+
+std::vector<int> processLine;
+Lock lock;
+Lock clientsLock; // Just checking client connections (in order to get total execution time)
+std::ofstream myfile;
+std::string fileName = "log.txt";
+std::time_t tt;
+
+int numberOfClients = 128;
+
+struct arg_struct
+{
+    int *sockFileDesc;
+    struct sockaddr_in * clientAddr;
+};
 
 void error(char *msg)
 {
@@ -37,26 +59,140 @@ void writeToFile (std::ofstream &myfile, std::string text, std::string fileName)
 	myfile.close();
 }
 
+void doTheJob (int newSockFileDesc)
+{
+    char buffer[BUFFER_SIZE];
+    int response;
+
+    // while (true)
+    while (read(newSockFileDesc, buffer, BUFFER_SIZE - 1) > 0)
+    {
+        std::string access(buffer);
+        bzero(buffer, BUFFER_SIZE);
+
+        // Requesting access
+        std::size_t found = access.find("request");
+        if (found != std::string::npos)
+        {
+            lock.acquire();
+            system_clock::time_point today = system_clock::now();
+            tt = system_clock::to_time_t(today);
+            std::string str(std::ctime(&tt));
+            std::string msg = "Received request message. RTC: " + str;
+            writeToFile(myfile, msg, fileName);
+            if (processLine.size() == 0)
+            {
+                // Queue is empty
+                system_clock::time_point today = system_clock::now();
+                tt = system_clock::to_time_t(today);
+                std::string str(std::ctime(&tt));
+                std::string msg = "Sending grant message to this process. RTC: " + str;
+                writeToFile(myfile, msg, fileName);
+                response = write(newSockFileDesc, "grant", 5);
+            }
+            processLine.push_back(newSockFileDesc);
+            lock.release();
+        }
+
+        // Release access
+        found = access.find("release");
+        if (found != std::string::npos)
+        {
+            lock.acquire(); // Dont know if it need lock here
+            system_clock::time_point today = system_clock::now();
+            tt = system_clock::to_time_t(today);
+            std::string str(std::ctime(&tt));
+            std::string msg = "Received release message. RTC: " + str;
+            writeToFile(myfile, msg, fileName);
+            processLine.erase(processLine.begin());
+            if (processLine.size() > 0)
+            {
+                system_clock::time_point today = system_clock::now();
+                tt = system_clock::to_time_t(today);
+                std::string str(std::ctime(&tt));
+                std::string msg = "Sending grant message to other process. RTC: " + str;
+                writeToFile(myfile, msg, fileName);
+                response = write(processLine[0], "grant", 5);
+            }
+            lock.release(); // Dont know if it need lock here
+        }
+
+        if(response < 0)
+        {
+            error((char *) "ERROR writing to socket");
+        }
+
+        bzero(buffer, BUFFER_SIZE);
+    }
+}
+
+void *connect (void *arguments)
+{
+    struct arg_struct *args = (struct arg_struct *) arguments;
+
+    listen(*args->sockFileDesc, MAX_CONNECTIONS);
+    socklen_t clientLen = sizeof(args->clientAddr);
+    int connections = 0;
+    
+    while (true)
+    {
+        int newSockFileDesc = accept(*args->sockFileDesc, (struct sockaddr *) &args->clientAddr, &clientLen);
+        if(newSockFileDesc < 0)
+        {
+            error((char *) "ERROR accepting client connection");
+        }
+
+        clientsLock.acquire();
+        connections++;
+        std::cout << connections << std::endl;
+        if (connections == 1)
+        {
+            startTime = std::chrono::high_resolution_clock::now();
+        }
+        clientsLock.release();
+
+         /* Create child process */
+        int pid = fork();
+          
+        if (pid < 0) 
+        {
+           perror("ERROR on fork");
+           exit(1);
+        }
+        
+        if (pid == 0) 
+        {
+            doTheJob(newSockFileDesc);
+            // Closing connection
+            clientsLock.acquire();
+            if (connections == numberOfClients)
+            {
+                endTime = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> endTimeSpan = std::chrono::duration_cast< std::chrono::duration<double> >(endTime - startTime);
+                std::cout << "end: " << endTimeSpan.count() << " secs" << std::endl;
+            }
+            clientsLock.release();
+            close(newSockFileDesc);
+            exit(0);
+        }
+        else 
+        {
+            close(newSockFileDesc);
+        }
+    }
+}
+
+
 int main(int argc, const char* argv[])
 {
 	// get RTC (real time clock)
-	using std::chrono::system_clock;
-	system_clock::time_point today = system_clock::now(); 
+	system_clock::time_point today = system_clock::now();
 
-	std::time_t tt;
   	tt = system_clock::to_time_t(today);
   	std::cout << "today is: " << std::ctime(&tt) << std::endl;
 
-  	// Log file
-  	std::string fileName = "log.txt";
-  	// std::string accessType[3] = { "request", "grant", "release"};
-
-    // Initializing process line
-    std::vector<int> processLine;
-
   	// Creating server
     int sockFileDesc, newSockFileDesc, response, indexOfZero;
-    socklen_t clientLen;
     char buffer[BUFFER_SIZE];
     struct sockaddr_in serverAddr, clientAddr;
 
@@ -80,77 +216,13 @@ int main(int argc, const char* argv[])
         error((char *) "ERROR binding socket");
     }
 
-    listen(sockFileDesc, MAX_CONNECTIONS);
-
-    clientLen = sizeof(clientAddr);
-    newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
-    if(newSockFileDesc < 0)
-    {
-        error((char *) "ERROR accepting client connection");
-    }
-
-    while (true)
-    {
-        // clientLen = sizeof(clientAddr);
-        // newSockFileDesc = accept(sockFileDesc, (struct sockaddr *) &clientAddr, &clientLen);
-        // if(newSockFileDesc < 0)
-        // {
-        //     error((char *) "ERROR accepting client connection");
-        // }
-        // std::cout << newSockFileDesc << std::endl;
-        bzero(buffer, BUFFER_SIZE);
-        
-        // read() blocks until there is something for it to read in the socket
-        response = read(newSockFileDesc, buffer, BUFFER_SIZE - 1); // request to write on file
-        std::cout << buffer << std::endl;
-        if(response < 0)
-        {
-            error((char *) "ERROR reading from socket");
-        }
-        else if (response == 0)
-        {
-            // client has closed its connection
-            continue;
-        }
-
-        std::string access(buffer);
-
-        // Requesting access
-        std::size_t found = access.find("request");
-        if (found != std::string::npos)
-        {
-            if (processLine.size() == 0)
-            {
-                // Queue is empty
-                response = write(newSockFileDesc, "grant", 5);
-            }
-
-            processLine.push_back(newSockFileDesc);
-        }
-
-        // Release access
-        found = access.find("release");
-        if (found != std::string::npos)
-        {
-            if (processLine.size() > 0)
-            {
-                response = write(processLine[0], "grant", 5);
-
-                processLine.erase(processLine.begin());
-            }
-        }
-
-        if(response < 0)
-        {
-            error((char *) "ERROR writing to socket");
-        }
-    }
-
-    close(newSockFileDesc);
-    close(sockFileDesc);
+    // Thread to accept new connections
+    pthread_t acceptConnections;
+    struct arg_struct pArgs;
+    pArgs.sockFileDesc = &sockFileDesc;
+    pArgs.clientAddr   = (struct sockaddr_in *) &clientAddr;
+    pthread_create(&acceptConnections, NULL, connect, (void *) &pArgs);
+    pthread_join(acceptConnections, NULL);
 	
-	// Writing to a file
-	// ofstream myfile;
-	// writeToFile(myfile, "oie", "log.txt");
 	return 0;
 }

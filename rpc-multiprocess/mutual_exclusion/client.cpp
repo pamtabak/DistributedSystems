@@ -18,7 +18,6 @@
 
 #define BUFFER_SIZE 256
 #define PORT_NO 12345
-#define MAX_CONNECTIONS 5
 
 #define T 1
 #define X 100
@@ -48,7 +47,8 @@ int main(int argc, const char* argv[])
 {
 	srand(getpid());
 
-	string fileName      = "file.txt"; 
+    ofstream myfile;
+	string fileName = "file.txt"; 
 
 	// Connecting to server
 	int sockFileDesc, portNo, response;
@@ -80,13 +80,16 @@ int main(int argc, const char* argv[])
 
 	for (int i = 0; i < X; i++)
 	{
-		sleep(randomDouble());
+        double random = randomDouble();
+        unsigned int microseconds = (int) (random * 1000);
+        cout << microseconds << endl;
+		usleep(microseconds);
+        // sleep(5.0);
 
-        bzero(buffer, BUFFER_SIZE);
-
-        string s      = "request";
-        const char *c = s.c_str();
-        response      = write(sockFileDesc, c, s.size());
+        // bzero(buffer, BUFFER_SIZE);
+        string request  = "request";
+        const char *req = request.c_str();
+        response        = write(sockFileDesc, req, request.size());
         if(response < 0)
         {
             error((char *) "ERROR writing to socket");
@@ -100,29 +103,30 @@ int main(int argc, const char* argv[])
         }
 
         // Just checking if coordinator has granted this client access
-        std::string access(buffer);
+        string access(buffer);
+        cout << access << endl;
+        bzero(buffer, BUFFER_SIZE);
 
         // Requesting access
         std::size_t found = access.find("grant");
         if (found != std::string::npos)
         {
             // WRITE ON FILE
-            std::cout << "granted" << std::endl;
-        }
+            string out = "I`m client with process id = " + to_string(getpid());
+            writeToFile(myfile, out, fileName);
 
-        // Release region
-        bzero(buffer, BUFFER_SIZE);
-
-        s        = "release"; // release
-        c        = s.c_str();
-        response = write(sockFileDesc, c, s.size());
-        if(response < 0)
-        {
-            error((char *) "ERROR writing to socket");
+            // Release region
+            string release = "release";
+            const char *r  = release.c_str();
+            response       = write(sockFileDesc, r, release.size());
+            if(response < 0)
+            {
+                error((char *) "ERROR writing to socket");
+            }
         }
 	}
 
-	close(sockFileDesc);
+    close(sockFileDesc);
 
 	return 0;
 }
